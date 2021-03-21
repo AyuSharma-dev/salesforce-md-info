@@ -10,16 +10,28 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:salesforce-md-info.helloWorld"
+		"onStartupFinished"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "salesforce-md-info.helloWorld",
-				"title": "Hello World"
+				"command": "salesforce-md-info.getmdinfo",
+				"title": "MDI: Get Metadata Info"
 			}
-		]
+		],
+		"menus": {
+			"explorer/context": [{
+				"command": "salesforce-md-info.getmdinfo",
+				"group": "MDI",
+				"when": "resourceLangId == apex"
+			}],
+			"editor/context": [{
+				"command": "salesforce-md-info.getmdinfo",
+				"group": "MDI",
+				"when": "resourceLangId == apex"
+			}]
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
