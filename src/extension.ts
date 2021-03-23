@@ -2,10 +2,11 @@ import * as vscode from 'vscode';
 const { exec } = require( 'child_process' );
 const fs=require('fs');
 import * as path from 'path';
+import {toolingAPIObject} from './toolingAPIObject';
 
-var instanceUrl = undefined;
+var instanceUrl:String;
 
-const ExtensionsToComponent = new Map([ 
+const extensionsToComponent = new Map([ 
 	['cmp', 'AuraDefinitionBundle'],
 	['auradoc', 'AuraDefinitionBundle'],
 	['cmp-meta', 'AuraDefinitionBundle'],
@@ -30,10 +31,8 @@ export function activate(context: vscode.ExtensionContext) {
 	//Getting Instance URL:
 	getInstanceUrl().then( function( instUrl ){
 		instanceUrl = instUrl;
-		console.log('instanceUrlonce-->'+instanceUrl);
+		console.log('instanceUrlOnce-->'+instanceUrl);
 	});	
-	var ed = vscode.window.activeTextEditor;
-	console.log('filenameonce-->'+ed.document.fileName);
 
 	let disposable = vscode.commands.registerCommand('salesforce-md-info.getmdinfo', () => {
 
@@ -48,8 +47,13 @@ export function activate(context: vscode.ExtensionContext) {
                     var importedData = JSON.parse(fs.readFileSync(context.extensionPath + "\\src\\dataInfos.json", 'utf8'));
 
 					var editorInfo = vscode.window.activeTextEditor;
+
+					if( editorInfo === undefined ){
+						return resolve(false);
+					}
+
 					var fileFullNameList = editorInfo.document.fileName.substring(editorInfo.document.fileName.lastIndexOf('\\') + 1).split('.');
-					var fileName = undefined, fileExtension = undefined;
+					var fileName:string, fileExtension:string;
 					if( fileFullNameList.length > 3 ){
 						fileName = fileFullNameList[1];
 						fileExtension = fileFullNameList[2];
@@ -59,37 +63,41 @@ export function activate(context: vscode.ExtensionContext) {
 						fileExtension = fileFullNameList[1];
 					}
 					console.log('fileName-->'+fileName+'--Ext-->'+fileExtension);
-					var extObj = undefined;
+					var extObj:{ objectName:string, fields:string, searchField:string };
+
 					new Promise( resolve=>{
 						if( fileExtension === 'js' || fileExtension === 'css' ){
-							getComponentTypeSelected().then( function( newFileExt ){
+							getComponentTypeSelected().then( function( newFileExt:string ){
 								getComponentActualName( fileName ).then( function(resultName){
 									fileName = resultName;
 									extObj = importedData[ newFileExt ];
 									return resolve(true);
-								})
+								});
 							});
 						}
 						else{
-							if( ExtensionsToComponent.get( fileExtension ) != undefined ){
-								fileExtension = ExtensionsToComponent.get( fileExtension );
+							var ext:string|undefined = extensionsToComponent.get( fileExtension );
+							if( ext === undefined ){
+								extObj = importedData[fileExtension];
 							}
-							extObj = importedData[fileExtension];
+							else{
+								extObj = importedData[ext];
+							}
 							return resolve(true);
 						}
 					}).then(function(result){
-						if( extObj == undefined ){
+						if( extObj === undefined ){
 							vscode.window.showErrorMessage("This data type is not supported.");
 							return resolve(false);
 						}
 					}).then( function(result){
-						if( extObj != undefined ){
-							const query = "\"Select "+extObj.fields+" From "+extObj.objectName+" Where "+extObj.searchField+" = "+"\'"+fileName+"\'"+" \"";
+						if( extObj !== undefined ){
+							const query = "\"Select "+extObj.fields+" From "+extObj.objectName+" ,,Where "+extObj.searchField+" = "+"\'"+fileName+"\'"+" \"";
 							var queryForMD = "sfdx force:data:soql:query --json -t -q "+query;
 							console.log( 'query-->'+query );
 							getDataInfo( queryForMD ).then( function( mdInfo ){
 		
-								if( mdInfo.status != 0 ){
+								if( mdInfo.status !== 0 ){
 									vscode.window.showErrorMessage("Error occurred when fetching information.");
 									outputChannel.append( mdInfo.message );
 									outputChannel.show();	
@@ -97,12 +105,12 @@ export function activate(context: vscode.ExtensionContext) {
 								}
 		
 								//Raising error if no data returned.
-								if( mdInfo.result.records == undefined || mdInfo.result.records.length == 0 ){
+								if( mdInfo.result.records === undefined || mdInfo.result.records.length === 0 ){
 									vscode.window.showErrorMessage("No data found with this name in Org. Either its deleted or you don't have access to it.");
 									return resolve(false);
 								}
 		
-								var returnedObject = undefined;
+								var returnedObject:any;
 		
 								//If there are more then one record found then assigning the Last one.
 								if( mdInfo.result.records.length > 1 ){
@@ -114,17 +122,17 @@ export function activate(context: vscode.ExtensionContext) {
 		
 								getHtmlTable( returnedObject, extObj.fields.split(',') ).then( function( content ){
 									console.log('content-->'+content);
-									createWebView( content, fileName, returnedObject.Id, context ).then( function( result ){
-										return resolve( true );
+									createWebView( content, fileName, returnedObject.Id, context ).then( function(result){
+										return resolve( result );
 									} );
 								} );
-							})
+							});
 						}
 					});
 				}
 				catch (error) {
-					console.log( 'Error occured: '+error.message+'----'+error.stack );
-					vscode.window.showErrorMessage("Error occured.");
+					console.log( 'Error occurred: '+error.message+'----'+error.stack );
+					vscode.window.showErrorMessage("Error occurred.");
 					return resolve(false);
 				}
 			});
@@ -136,7 +144,7 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 
-function getComponentTypeSelected(){
+function getComponentTypeSelected():Promise<string>{
 	return new Promise( async resolve=>{
 		var choice = await vscode.window.showInformationMessage("Please let us know the Type of Component, it's a:", "Aura Component", "Lightning Web Component");
 		if (choice === "Aura Component") {
@@ -149,7 +157,7 @@ function getComponentTypeSelected(){
 }
 
 
-function getComponentActualName( fileName ){
+function getComponentActualName( fileName:string ):Promise<string>{
 
 	return new Promise( resolve=>{
 		const fileNameUpperCase = fileName.toUpperCase();
@@ -170,7 +178,7 @@ function getComponentActualName( fileName ){
 }
 
 
-function createWebView( content, tabName, mdId, context ){
+function createWebView( content:string, tabName:string, mdId:string, context:vscode.ExtensionContext ){
 	return new Promise( resolve=>{
 		let currentPanel = undefined;
 		tabName = tabName+'detail';
@@ -205,7 +213,7 @@ function createWebView( content, tabName, mdId, context ){
 }
 
 
-function openItemInOrg( mdId, context ){
+function openItemInOrg( mdId:string, context:vscode.ExtensionContext ){
 
 	vscode.window.withProgress({
 		location: vscode.ProgressLocation.Notification,
@@ -214,7 +222,7 @@ function openItemInOrg( mdId, context ){
 		}, () => {
 		var p2 = new Promise( resolve2 =>{
 			var p = new Promise( resolve=>{
-				if( instanceUrl == undefined ){
+				if( instanceUrl === undefined ){
 					getInstanceUrl().then( function( instUrl ){
 						instanceUrl = instUrl;
 						return resolve( instanceUrl );
@@ -231,41 +239,44 @@ function openItemInOrg( mdId, context ){
 				return resolve2( true );
 			});
 		} );
-		return p2
+		return p2;
 	});
 	
 }
 
 
-function getInstanceUrl(){
+function getInstanceUrl():Promise<String>{
 
 	return new Promise( resolve => {
 		let command = "sfdx force:org:display --json";
 		getDataInfo( command ).then( function( resultObj ){
 			console.log( 'status-->'+resultObj.status );
-			if( resultObj.status == 0 ){
+			if( resultObj.status === 0 ){
 				return resolve( resultObj.result.instanceUrl );
 			}
 			else{
 				vscode.window.showErrorMessage('Problem occurred in getting org info.');
-				return resolve( false );
+				return resolve( '' );
 			}
 		});
 	});
 }
 
 
-function getDataInfo( command ){
+function getDataInfo( command:string ):Promise<toolingAPIObject.RootObject>{
 
 	return new Promise(resolve=>{
 		var outputJson = '';
 		//let currentPanel: vscode.WebviewPanel | undefined = undefined;
+		if( vscode.workspace.workspaceFolders === undefined ){
+			return;
+		}
 		let foo = exec( command,{
 			maxBuffer: 1024 * 1024 * 6,
 			cwd: vscode.workspace.workspaceFolders[0].uri.fsPath
 		});
 
-		foo.stdout.on("data",(dataArg)=> {
+		foo.stdout.on("data",(dataArg:string)=> {
 			try{
 				outputJson += dataArg;
 			}
@@ -274,7 +285,7 @@ function getDataInfo( command ){
 			}
 		});
 
-		foo.on('close', (data)=> {
+		foo.on('close', (data:string)=> {
 			console.log('items-->'+outputJson);
 			return resolve( JSON.parse(outputJson) );
 		});
@@ -282,7 +293,7 @@ function getDataInfo( command ){
 }
 
 
-function getHtmlTable( returnedObj, fieldsList ){
+function getHtmlTable( returnedObj:{[key:string]: toolingAPIObject.Record}, fieldsList:string[] ):Promise<string>{
 
 	return new Promise( resolve=> {
 		let content = `<table id="customers">
@@ -291,13 +302,14 @@ function getHtmlTable( returnedObj, fieldsList ){
 								<th width="150%">Value</th>
 							</tr>`;
 		for( var i = 0; i<fieldsList.length; i++ ){
-			var fieldName = fieldsList[i];
+			var fieldName:string = fieldsList[i];
 			if( fieldName.includes('.') ){
 				content += `<tr><td>${apiToLabel.get(fieldName)}</td>`;
-				fieldName = fieldName.split('.');
-				console.log( 'fieldName-->'+fieldName );
-				if( returnedObj[fieldName[0]] != null ){
-                    content += `<td>${returnedObj[fieldName[0]][fieldName[1]]}</td></tr>`;
+				const fieldsList = fieldName.split('.');
+				console.log( 'fieldsList-->'+fieldsList );
+				var recordValLevelOne:any = returnedObj[fieldsList[0]];
+				if( recordValLevelOne !== null ){
+                    content += `<td>${recordValLevelOne[fieldsList[1]]}</td></tr>`;
                 }
                 else{
                     content += `<td>null</td></tr>`;
@@ -314,7 +326,7 @@ function getHtmlTable( returnedObj, fieldsList ){
 }
 
 
-function getWebviewContent( content, urlOpenImage ){
+function getWebviewContent( content:string, urlOpenImage:string ){
 	return `<!DOCTYPE html>
 	<html lang="en">
 	<style>
@@ -391,3 +403,4 @@ function getWebviewContent( content, urlOpenImage ){
 //"https://drive.google.com/uc?export=view&id=1JUJzQRF0bDUz4N5XfTTcDp5iZLzda2V-"
 // this method is called when your extension is deactivated
 export function deactivate() {}
+
