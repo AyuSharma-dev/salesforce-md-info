@@ -99,7 +99,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(disposable);
 }
 
-
+//Method Returns the Metadata object details.
 function getResultObj( context:vscode.ExtensionContext ):Promise<any[]>{
 	var fileName:string;
 	return new Promise(resolve=>{
@@ -153,7 +153,7 @@ function getResultObj( context:vscode.ExtensionContext ):Promise<any[]>{
 
 }
 
-
+//Method reads and returns active/selected File Name and Extension.
 function getFileNameAndExtension():Promise<any[]>{
 
 	return new Promise( resolve=>{
@@ -178,7 +178,7 @@ function getFileNameAndExtension():Promise<any[]>{
 
 }
 
-
+//Method returns the Object MD which matches the Extension will be used to create Query.
 function getExtObj( fileExtension:string, fileName:string, context:vscode.ExtensionContext ):
 	Promise<{ objectName:string, fields:string, searchField:string }>{
 
@@ -210,7 +210,7 @@ function getExtObj( fileExtension:string, fileName:string, context:vscode.Extens
 
 }
 
-
+//If selected file is JS then give option for Aura/LWC.
 function getComponentTypeSelected():Promise<string>{
 	return new Promise( async resolve=>{
 		var choice = await vscode.window.showInformationMessage("Please let us know the Type of Component, it's a:", "Aura Component", "Lightning Web Component");
@@ -223,7 +223,7 @@ function getComponentTypeSelected():Promise<string>{
 	});
 }
 
-
+//Get the Actual name of Component which may have multiple extensions.
 function getComponentActualName( fileName:string ):Promise<string>{
 
 	return new Promise( resolve=>{
@@ -244,7 +244,7 @@ function getComponentActualName( fileName:string ):Promise<string>{
 
 }
 
-
+//Method generated the Web view from the Passed Content.
 function createWebView( content:string, tabName:string, mdId:string, context:vscode.ExtensionContext, createPanel:boolean ){
 	return new Promise( resolve=>{
 		var tabLabel = tabName+' Details';
@@ -288,7 +288,7 @@ function createWebView( content:string, tabName:string, mdId:string, context:vsc
 
 }
 
-
+//Method Opens the Item into Org.
 function openItemInOrg( mdId:string, showProgress:boolean ){
 
 	if(showProgress){
@@ -316,12 +316,10 @@ function openItemInOrg( mdId:string, showProgress:boolean ){
 			});
 		});
 		return p2;
-	}
-	
-	
+	}	
 }
 
-
+//Method runs the Passed command into the Terminal with SFDX directory.
 function runCommand( command:string, readOutput:boolean ):Promise<toolingAPIObject.RootObject>{
 
 	return new Promise(resolve=>{
@@ -358,7 +356,7 @@ function runCommand( command:string, readOutput:boolean ):Promise<toolingAPIObje
 	});
 }
 
-
+//Method creates the Table with Dynamic fields to show the Metadata Details.
 function getHtmlTable( returnedObj:{[key:string]: toolingAPIObject.Record}, fieldsList:string[] ):Promise<string>{
 
 	return new Promise( resolve=> {
@@ -391,7 +389,7 @@ function getHtmlTable( returnedObj:{[key:string]: toolingAPIObject.Record}, fiel
 	} );
 }
 
-
+//Method returns the HTML which will be set on the Web View.
 function getWebviewContent( content:string, urlOpenImage:string, refreshIcon:string ){
 	return `<!DOCTYPE html>
 	<html lang="en">
@@ -488,7 +486,6 @@ function getWebviewContent( content:string, urlOpenImage:string, refreshIcon:str
 
 }
 
-//"https://drive.google.com/uc?export=view&id=1JUJzQRF0bDUz4N5XfTTcDp5iZLzda2V-"
 // this method is called when your extension is deactivated
 export function deactivate() {}
 
