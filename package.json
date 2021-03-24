@@ -18,6 +18,14 @@
 			{
 				"command": "salesforce-md-info.getmdinfo",
 				"title": "MDI: Get Metadata Info"
+			},
+			{
+				"command": "salesforce-md-info.refreshinstanceurl",
+				"title": "MDI: Refresh Instance URL"
+			},
+			{
+				"command": "salesforce-md-info.openiteminorg",
+				"title": "MDI: Open Item in Org."
 			}
 		],
 		"menus": {

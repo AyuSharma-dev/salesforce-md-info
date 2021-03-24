@@ -3,8 +3,10 @@ const { exec } = require( 'child_process' );
 const fs=require('fs');
 import * as path from 'path';
 import {toolingAPIObject} from './toolingAPIObject';
+import { removeAllListeners } from 'node:process';
 
 var instanceUrl:String;
+var currentPanel:any;
 
 const extensionsToComponent = new Map([ 
 	['cmp', 'AuraDefinitionBundle'],
@@ -26,8 +28,6 @@ const outputChannel = vscode.window.createOutputChannel('Test Suite Manager');
 
 export function activate(context: vscode.ExtensionContext) {
 
-	console.log('Congratulations, your extension "salesforce-md-info" is now active!');
-
 	//Getting Instance URL:
 	getInstanceUrl().then( function( instUrl ){
 		instanceUrl = instUrl;
@@ -39,94 +39,22 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.window.withProgress({
 			location: vscode.ProgressLocation.Notification,
 			title: "Getting file info.",
-			cancellable: false
+			cancellable: true
 			}, () => {
 			var p = new Promise(async resolve => {
 				try {
-                    console.log(context.extensionPath + "\\src\\dataInfos.json");
-                    var importedData = JSON.parse(fs.readFileSync(context.extensionPath + "\\src\\dataInfos.json", 'utf8'));
-
-					var editorInfo = vscode.window.activeTextEditor;
-
-					if( editorInfo === undefined ){
-						return resolve(false);
-					}
-
-					var fileFullNameList = editorInfo.document.fileName.substring(editorInfo.document.fileName.lastIndexOf('\\') + 1).split('.');
-					var fileName:string, fileExtension:string;
-					if( fileFullNameList.length > 3 ){
-						fileName = fileFullNameList[1];
-						fileExtension = fileFullNameList[2];
-					}
-					else{
-						fileName = fileFullNameList[0];
-						fileExtension = fileFullNameList[1];
-					}
-					console.log('fileName-->'+fileName+'--Ext-->'+fileExtension);
-					var extObj:{ objectName:string, fields:string, searchField:string };
-
-					new Promise( resolve=>{
-						if( fileExtension === 'js' || fileExtension === 'css' ){
-							getComponentTypeSelected().then( function( newFileExt:string ){
-								getComponentActualName( fileName ).then( function(resultName){
-									fileName = resultName;
-									extObj = importedData[ newFileExt ];
-									return resolve(true);
+                    getResultObj( context ).then(function( returnedValues ){
+						JSON.stringify( 'rVal-->'+JSON.stringify(returnedValues) );
+						if( returnedValues.length !== 0 ){
+							getHtmlTable( returnedValues[0], returnedValues[2].fields.split(',') ).then( function( content ){
+								createWebView( content, returnedValues[1], returnedValues[0].Id, context, true ).then( function(result){
+									return resolve( result );
 								});
 							});
 						}
 						else{
-							var ext:string|undefined = extensionsToComponent.get( fileExtension );
-							if( ext === undefined ){
-								extObj = importedData[fileExtension];
-							}
-							else{
-								extObj = importedData[ext];
-							}
-							return resolve(true);
-						}
-					}).then(function(result){
-						if( extObj === undefined ){
-							vscode.window.showErrorMessage("This data type is not supported.");
+							console.log('Something went Wrong.');
 							return resolve(false);
-						}
-					}).then( function(result){
-						if( extObj !== undefined ){
-							const query = "\"Select "+extObj.fields+" From "+extObj.objectName+" ,,Where "+extObj.searchField+" = "+"\'"+fileName+"\'"+" \"";
-							var queryForMD = "sfdx force:data:soql:query --json -t -q "+query;
-							console.log( 'query-->'+query );
-							getDataInfo( queryForMD ).then( function( mdInfo ){
-		
-								if( mdInfo.status !== 0 ){
-									vscode.window.showErrorMessage("Error occurred when fetching information.");
-									outputChannel.append( mdInfo.message );
-									outputChannel.show();	
-									return resolve(false);
-								}
-		
-								//Raising error if no data returned.
-								if( mdInfo.result.records === undefined || mdInfo.result.records.length === 0 ){
-									vscode.window.showErrorMessage("No data found with this name in Org. Either its deleted or you don't have access to it.");
-									return resolve(false);
-								}
-		
-								var returnedObject:any;
-		
-								//If there are more then one record found then assigning the Last one.
-								if( mdInfo.result.records.length > 1 ){
-									returnedObject = mdInfo.result.records[ mdInfo.result.records.length - 1 ];
-								}
-								else{
-									returnedObject = mdInfo.result.records[0];
-								}
-		
-								getHtmlTable( returnedObject, extObj.fields.split(',') ).then( function( content ){
-									console.log('content-->'+content);
-									createWebView( content, fileName, returnedObject.Id, context ).then( function(result){
-										return resolve( result );
-									} );
-								} );
-							});
 						}
 					});
 				}
@@ -140,7 +68,168 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
+
+	let refreshInstanceURL = vscode.commands.registerCommand('salesforce-md-info.refreshinstanceurl', () => {
+		vscode.window.withProgress({
+			location: vscode.ProgressLocation.Notification,
+			title: "Refreshing Instance URL.",
+			cancellable: true
+			}, () => {
+			var p = new Promise(async resolve => {
+				getInstanceUrl().then( function( instUrl:string ){
+					instanceUrl = instUrl;
+					vscode.window.showInformationMessage('Instance URL is refreshed.');
+					console.log('instanceUrlOnce-->'+instanceUrl);
+					return resolve(true);
+				});
+			});
+			return p;
+		});
+	});
+
+	let openItemInOrgCmd = vscode.commands.registerCommand('salesforce-md-info.openiteminorg', () => {
+		vscode.window.withProgress({
+			location: vscode.ProgressLocation.Notification,
+			title: "Opening Item in Org.",
+			cancellable: true
+			}, () => {
+			var p = new Promise(async resolve => {
+				try {
+					getResultObj( context ).then( function(returnedValues){
+						if( returnedValues.length !== 0 && returnedValues[0].Id !== undefined ){
+							openItemInOrg( returnedValues[0].Id, context );
+							return resolve(true);
+						}
+						else{
+							vscode.window.showErrorMessage('Not able to open this item in Org.');
+							return resolve(false);
+						}
+					});
+				}
+				catch( error ){
+					console.log('error Occurred: '+error.stack);
+					vscode.window.showErrorMessage('Not able to open this item in Org.');
+					return resolve(false);
+				}
+			});
+			return p;
+		});
+	});
+
+	context.subscriptions.push(openItemInOrgCmd);
+	context.subscriptions.push(refreshInstanceURL);
 	context.subscriptions.push(disposable);
+}
+
+
+function getResultObj( context:vscode.ExtensionContext ):Promise<any[]>{
+	var fileName:string;
+	return new Promise(resolve=>{
+		getFileNameAndExtension().then(function(fileInfo){
+			console.log('fileName=>'+fileInfo[1]+'---'+'fileExt-->'+fileInfo[0]);
+			fileName = fileInfo[1];
+			getExtObj( fileInfo[0], fileInfo[1], context ).then( function( extObject ){
+				console.log('extObj-->'+JSON.stringify(extObject));
+				return extObject;
+
+			}).then(function(extObj){
+				if( extObj === undefined ){
+					vscode.window.showErrorMessage("This data type is not supported.");
+					return resolve([]);
+				}
+				else{
+					const query = "\"Select "+extObj.fields+" From "+extObj.objectName+" Where "+extObj.searchField+" = "+"\'"+fileName+"\'"+" \"";
+					var queryForMD = "sfdx force:data:soql:query --json -t -q "+query;
+					console.log( 'query-->'+query );
+					getDataInfo( queryForMD ).then( function( mdInfo ){
+
+						if( mdInfo.status !== 0 ){
+							vscode.window.showErrorMessage("Error occurred when fetching information.");
+							outputChannel.append( mdInfo.message );
+							outputChannel.show();	
+							return resolve([]);
+						}
+
+						//Raising error if no data returned.
+						if( mdInfo.result.records === undefined || mdInfo.result.records.length === 0 ){
+							vscode.window.showErrorMessage("No data found with this name in Org. Either its deleted or you don't have access to it.");
+							return resolve([]);
+						}
+
+						var returnedObject:any;
+
+						//If there are more then one record found then assigning the Last one.
+						if( mdInfo.result.records.length > 1 ){
+							returnedObject = mdInfo.result.records[ mdInfo.result.records.length - 1 ];
+							return resolve([returnedObject, fileName, extObj]);
+						}
+						else{
+							returnedObject = mdInfo.result.records[0];
+							return resolve([returnedObject, fileName, extObj]);
+						}
+					});
+				}
+			});
+		});
+	});
+
+}
+
+
+function getFileNameAndExtension():Promise<any[]>{
+
+	return new Promise( resolve=>{
+		var editorInfo = vscode.window.activeTextEditor;
+
+		if( editorInfo === undefined ){
+			return resolve([]);
+		}
+
+		var fileFullNameList = editorInfo.document.fileName.substring(editorInfo.document.fileName.lastIndexOf('\\') + 1).split('.');
+		var fileName:string, fileExtension:string;
+		if( fileFullNameList.length > 3 ){
+			fileName = fileFullNameList[1];
+			fileExtension = fileFullNameList[2];
+		}
+		else{
+			fileName = fileFullNameList[0];
+			fileExtension = fileFullNameList[1];
+		}
+		return resolve( [fileExtension, fileName] );
+	});
+
+}
+
+
+function getExtObj( fileExtension:string, fileName:string, context:vscode.ExtensionContext ):
+	Promise<{ objectName:string, fields:string, searchField:string }>{
+
+	var importedData = JSON.parse(fs.readFileSync(context.extensionPath + "\\src\\dataInfos.json", 'utf8'));
+
+	var extObj:{ objectName:string, fields:string, searchField:string };
+
+	return new Promise( resolve=>{
+		if( fileExtension === 'js' || fileExtension === 'css' ){
+			getComponentTypeSelected().then( function( newFileExt:string ){
+				getComponentActualName( fileName ).then( function(resultName){
+					fileName = resultName;
+					extObj = importedData[ newFileExt ];
+					return resolve(extObj);
+				});
+			});
+		}
+		else{
+			var ext:string|undefined = extensionsToComponent.get( fileExtension );
+			if( ext === undefined ){
+				extObj = importedData[fileExtension];
+			}
+			else{
+				extObj = importedData[ext];
+			}
+			return resolve(extObj);
+		}
+	});
+
 }
 
 
@@ -178,35 +267,44 @@ function getComponentActualName( fileName:string ):Promise<string>{
 }
 
 
-function createWebView( content:string, tabName:string, mdId:string, context:vscode.ExtensionContext ){
+function createWebView( content:string, tabName:string, mdId:string, context:vscode.ExtensionContext, createPanel:boolean ){
 	return new Promise( resolve=>{
-		let currentPanel = undefined;
-		tabName = tabName+'detail';
 		var tabLabel = tabName+' Details';
+		tabName = tabName+'detail';
 
-		currentPanel = vscode.window.createWebviewPanel(
-			tabName,
-			tabLabel,
-			vscode.ViewColumn.One,
-			{
-				enableScripts: true
-			}
-		);
+		if( createPanel ){
+			currentPanel = vscode.window.createWebviewPanel(
+				tabName,
+				tabLabel,
+				vscode.ViewColumn.One,
+				{
+					enableScripts: true
+				}
+			);
+
+			currentPanel.webview.onDidReceiveMessage(
+				(			
+					message: { text: string; command: any; }) => {
+					var selectedItems = message.text.split(' ');
+					selectedItems.pop();
+					switch (message.command) {
+						case 'open_in_org':
+							openItemInOrg( mdId, context );
+						case 'refresh_information':
+							createWebView( content, tabName.slice( 0, tabName.lastIndexOf('detail') ), mdId, context, false );
+					}
+				},
+				undefined
+			);
+		}
 		let urlOpenImage = vscode.Uri.file(path.join(context.extensionPath, 'Images/openinorg.png')).with({
 			scheme: "vscode-resource"
 		}).toString();
-		currentPanel.webview.html = getWebviewContent(content,urlOpenImage);
-		currentPanel.webview.onDidReceiveMessage(
-			message => {
-				var selectedItems = message.text.split(' ');
-				selectedItems.pop();
-				switch (message.command) {
-					case 'open_in_org':
-						return openItemInOrg( mdId, context );
-				}
-			},
-			undefined
-		);
+		let refreshIcon = vscode.Uri.file(path.join(context.extensionPath, 'Images/whiteRefresh.png')).with({
+			scheme: "vscode-resource"
+		}).toString();
+		
+		currentPanel.webview.html = getWebviewContent(content,urlOpenImage,refreshIcon);
 		return resolve( currentPanel );
 	} );
 
@@ -245,7 +343,7 @@ function openItemInOrg( mdId:string, context:vscode.ExtensionContext ){
 }
 
 
-function getInstanceUrl():Promise<String>{
+function getInstanceUrl():Promise<string>{
 
 	return new Promise( resolve => {
 		let command = "sfdx force:org:display --json";
@@ -298,8 +396,8 @@ function getHtmlTable( returnedObj:{[key:string]: toolingAPIObject.Record}, fiel
 	return new Promise( resolve=> {
 		let content = `<table id="customers">
 							<tr>
-								<th width="50%">Field</th>
-								<th width="150%">Value</th>
+								<th width="250px">Field</th>
+								<th width="450px">Value</th>
 							</tr>`;
 		for( var i = 0; i<fieldsList.length; i++ ){
 			var fieldName:string = fieldsList[i];
@@ -326,7 +424,7 @@ function getHtmlTable( returnedObj:{[key:string]: toolingAPIObject.Record}, fiel
 }
 
 
-function getWebviewContent( content:string, urlOpenImage:string ){
+function getWebviewContent( content:string, urlOpenImage:string, refreshIcon:string ){
 	return `<!DOCTYPE html>
 	<html lang="en">
 	<style>
@@ -338,8 +436,8 @@ function getWebviewContent( content:string, urlOpenImage:string ){
 		font-family: sans-serif;
 		font-size: 120%;
 		float: left;
-		margin-right: 1%;
 		display: inline-block;
+		width:700px;
 	}
 	
 	#customers td, #customers th {
@@ -377,6 +475,12 @@ function getWebviewContent( content:string, urlOpenImage:string ){
 		margin-top: 5%;
 		float: left;
 	}
+	ul{
+		display: table-caption;
+		margin-top: 60%;
+		margin-left: -30%;
+		list-style: none;
+	}
 	</style>
 	<head>
 		<meta charset="UTF-8">
@@ -384,17 +488,33 @@ function getWebviewContent( content:string, urlOpenImage:string ){
 		<title>Metadata Info</title>
 	</head>
 	<script>
+		const vscode = acquireVsCodeApi();
+
 		var pushToOpenInOrg = function(object) {
-			const vscode = acquireVsCodeApi();
 			vscode.postMessage({
 				command: 'open_in_org',
 				text: 'Open in Org'
 			})
 		}
+
+		var refreshInfo = function(object) {
+			vscode.postMessage({
+				command: 'refresh_information',
+				text: 'Refresh Information'
+			})
+		}
 	</script>
 	<body>
 		${content}
-		<input type="image" class="button2" src="${urlOpenImage}" alt="Submit" width="40" height="40" onclick=pushToOpenInOrg(this) title="Open Item in Org.">
+
+		<ul>
+			<li>
+				<input type="image" class="button2" src="${urlOpenImage}" alt="Submit" width="40" height="40" onclick=pushToOpenInOrg(this) title="Open Item in Org.">
+			</li>
+			<li style="margin-top: 20px;">	
+				<!--<input type="image" class="button2" src="${refreshIcon}" alt="Submit" width="40" height="40" onclick=refreshInfo(this) title="Open Item in Org.">-->
+			</li>
+		</ul>	
 	</body>
 	</html>`;
 
