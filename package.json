@@ -20,10 +20,6 @@
 				"title": "MDI: Get Metadata Info"
 			},
 			{
-				"command": "salesforce-md-info.refreshinstanceurl",
-				"title": "MDI: Refresh Instance URL"
-			},
-			{
 				"command": "salesforce-md-info.openiteminorg",
 				"title": "MDI: Open Item in Org."
 			}
@@ -31,13 +27,19 @@
 		"menus": {
 			"explorer/context": [{
 				"command": "salesforce-md-info.getmdinfo",
-				"group": "MDI",
-				"when": "resourceLangId == apex"
+				"group": "MDI"
+			},
+			{
+				"command": "salesforce-md-info.openiteminorg",
+				"group": "MDI"
 			}],
 			"editor/context": [{
 				"command": "salesforce-md-info.getmdinfo",
-				"group": "MDI",
-				"when": "resourceLangId == apex"
+				"group": "MDI"
+			},
+			{
+				"command": "salesforce-md-info.openiteminorg",
+				"group": "MDI"
 			}]
 		}
 	},

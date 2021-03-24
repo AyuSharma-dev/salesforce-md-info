@@ -3,9 +3,7 @@ const { exec } = require( 'child_process' );
 const fs=require('fs');
 import * as path from 'path';
 import {toolingAPIObject} from './toolingAPIObject';
-import { removeAllListeners } from 'node:process';
 
-var instanceUrl:String;
 var currentPanel:any;
 
 const extensionsToComponent = new Map([ 
@@ -28,12 +26,7 @@ const outputChannel = vscode.window.createOutputChannel('Test Suite Manager');
 
 export function activate(context: vscode.ExtensionContext) {
 
-	//Getting Instance URL:
-	getInstanceUrl().then( function( instUrl ){
-		instanceUrl = instUrl;
-		console.log('instanceUrlOnce-->'+instanceUrl);
-	});	
-
+	//Command to get the Metadata Info
 	let disposable = vscode.commands.registerCommand('salesforce-md-info.getmdinfo', () => {
 
 		vscode.window.withProgress({
@@ -68,25 +61,7 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
-
-	let refreshInstanceURL = vscode.commands.registerCommand('salesforce-md-info.refreshinstanceurl', () => {
-		vscode.window.withProgress({
-			location: vscode.ProgressLocation.Notification,
-			title: "Refreshing Instance URL.",
-			cancellable: true
-			}, () => {
-			var p = new Promise(async resolve => {
-				getInstanceUrl().then( function( instUrl:string ){
-					instanceUrl = instUrl;
-					vscode.window.showInformationMessage('Instance URL is refreshed.');
-					console.log('instanceUrlOnce-->'+instanceUrl);
-					return resolve(true);
-				});
-			});
-			return p;
-		});
-	});
-
+	//Command to Open item directly into Org.
 	let openItemInOrgCmd = vscode.commands.registerCommand('salesforce-md-info.openiteminorg', () => {
 		vscode.window.withProgress({
 			location: vscode.ProgressLocation.Notification,
@@ -96,12 +71,16 @@ export function activate(context: vscode.ExtensionContext) {
 			var p = new Promise(async resolve => {
 				try {
 					getResultObj( context ).then( function(returnedValues){
-						if( returnedValues.length !== 0 && returnedValues[0].Id !== undefined ){
-							openItemInOrg( returnedValues[0].Id, context );
-							return resolve(true);
+						
+						if( returnedValues !== undefined && returnedValues.length !== 0 && returnedValues[0].Id !== undefined ){
+							var p = openItemInOrg( returnedValues[0].Id, false );
+							if( p !== undefined ){
+								p.then(function( result ){
+									return resolve(true);
+								});
+							}
 						}
 						else{
-							vscode.window.showErrorMessage('Not able to open this item in Org.');
 							return resolve(false);
 						}
 					});
@@ -117,7 +96,6 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	context.subscriptions.push(openItemInOrgCmd);
-	context.subscriptions.push(refreshInstanceURL);
 	context.subscriptions.push(disposable);
 }
 
@@ -141,7 +119,7 @@ function getResultObj( context:vscode.ExtensionContext ):Promise<any[]>{
 					const query = "\"Select "+extObj.fields+" From "+extObj.objectName+" Where "+extObj.searchField+" = "+"\'"+fileName+"\'"+" \"";
 					var queryForMD = "sfdx force:data:soql:query --json -t -q "+query;
 					console.log( 'query-->'+query );
-					getDataInfo( queryForMD ).then( function( mdInfo ){
+					runCommand( queryForMD, true ).then( function( mdInfo ){
 
 						if( mdInfo.status !== 0 ){
 							vscode.window.showErrorMessage("Error occurred when fetching information.");
@@ -289,7 +267,7 @@ function createWebView( content:string, tabName:string, mdId:string, context:vsc
 					selectedItems.pop();
 					switch (message.command) {
 						case 'open_in_org':
-							openItemInOrg( mdId, context );
+							openItemInOrg( mdId, true );
 						case 'refresh_information':
 							createWebView( content, tabName.slice( 0, tabName.lastIndexOf('detail') ), mdId, context, false );
 					}
@@ -311,57 +289,40 @@ function createWebView( content:string, tabName:string, mdId:string, context:vsc
 }
 
 
-function openItemInOrg( mdId:string, context:vscode.ExtensionContext ){
+function openItemInOrg( mdId:string, showProgress:boolean ){
 
-	vscode.window.withProgress({
-		location: vscode.ProgressLocation.Notification,
-		title: "Opening item in Org.",
-		cancellable: false
-		}, () => {
+	if(showProgress){
+		vscode.window.withProgress({
+			location: vscode.ProgressLocation.Notification,
+			title: "Opening item in Org.",
+			cancellable: true
+			}, () => {
+			var p2 = new Promise( resolve2 =>{
+				let command:string = "sfdx force:org:open -p /"+mdId;
+				runCommand( command, false ).then(function(result){
+					vscode.window.showInformationMessage('Item Opened in Org Successfully.');
+					return resolve2(true);
+				});
+			} );
+			return p2;
+		});
+	}
+	else{
 		var p2 = new Promise( resolve2 =>{
-			var p = new Promise( resolve=>{
-				if( instanceUrl === undefined ){
-					getInstanceUrl().then( function( instUrl ){
-						instanceUrl = instUrl;
-						return resolve( instanceUrl );
-					});	
-				}
-				else{
-					return resolve( instanceUrl );
-				}
-			});
-			p.then( function( instanceUrl ){
-				
-				console.log('this is my Name-->'+context.globalState.get( 'Name' ));
-				vscode.env.openExternal(vscode.Uri.parse(instanceUrl+'/'+mdId));
+			let command:string = "sfdx force:org:open -p /"+mdId;
+			runCommand( command, false ).then(function(result){
+				vscode.window.showInformationMessage('Item Opened in Org Successfully.');
 				return resolve2( true );
 			});
-		} );
+		});
 		return p2;
-	});
+	}
+	
 	
 }
 
 
-function getInstanceUrl():Promise<string>{
-
-	return new Promise( resolve => {
-		let command = "sfdx force:org:display --json";
-		getDataInfo( command ).then( function( resultObj ){
-			console.log( 'status-->'+resultObj.status );
-			if( resultObj.status === 0 ){
-				return resolve( resultObj.result.instanceUrl );
-			}
-			else{
-				vscode.window.showErrorMessage('Problem occurred in getting org info.');
-				return resolve( '' );
-			}
-		});
-	});
-}
-
-
-function getDataInfo( command:string ):Promise<toolingAPIObject.RootObject>{
+function runCommand( command:string, readOutput:boolean ):Promise<toolingAPIObject.RootObject>{
 
 	return new Promise(resolve=>{
 		var outputJson = '';
@@ -385,8 +346,15 @@ function getDataInfo( command:string ):Promise<toolingAPIObject.RootObject>{
 
 		foo.on('close', (data:string)=> {
 			console.log('items-->'+outputJson);
-			return resolve( JSON.parse(outputJson) );
+			if( readOutput ){
+				return resolve( JSON.parse(outputJson) );
+			}
+			else{
+				return resolve(JSON.parse('{"Not":"Required"}'));
+			}
+			
 		});
+		
 	});
 }
 
