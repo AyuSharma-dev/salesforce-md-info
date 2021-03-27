@@ -19,7 +19,8 @@ const apiToLabel = new Map([
 	['LastModifiedBy.Name','LastModifiedBy'],
 	['CreatedBy.Name','CreatedBy'],
 	['Author.Name','Author'],
-	['EntityDefinition.QualifiedApiName','SobjectType']
+	['EntityDefinition.QualifiedApiName','SobjectType'],
+	['Profile.Name', 'ProfileName']
 ]);
 
 const outputChannel = vscode.window.createOutputChannel('Test Suite Manager');
@@ -40,7 +41,15 @@ export function activate(context: vscode.ExtensionContext) {
 						JSON.stringify( 'rVal-->'+JSON.stringify(returnedValues) );
 						if( returnedValues.length !== 0 ){
 							getHtmlTable( returnedValues[0], returnedValues[2].fields.split(',') ).then( function( content ){
-								createWebView( content, returnedValues[1], returnedValues[0].Id, context, true ).then( function(result){
+								let redUrl;
+								if( returnedValues[2].redirectUrl !== undefined ){
+									redUrl=returnedValues[2].redirectUrl+returnedValues[0].Id;
+								}
+								else{
+									redUrl = returnedValues[0].Id;
+								}
+								
+								createWebView( content, returnedValues[1], redUrl, context, true ).then( function(result){
 									return resolve( result );
 								});
 							});
@@ -73,7 +82,14 @@ export function activate(context: vscode.ExtensionContext) {
 					getResultObj( context ).then( function(returnedValues){
 						
 						if( returnedValues !== undefined && returnedValues.length !== 0 && returnedValues[0].Id !== undefined ){
-							var p = openItemInOrg( returnedValues[0].Id, false );
+							let redUrl;
+							if( returnedValues[2].redirectUrl !== undefined ){
+								redUrl=returnedValues[2].redirectUrl+returnedValues[0].Id;
+							}
+							else{
+								redUrl = returnedValues[0].Id;
+							}
+							var p = openItemInOrg( redUrl, false );
 							if( p !== undefined ){
 								p.then(function( result ){
 									return resolve(true);
@@ -102,55 +118,93 @@ export function activate(context: vscode.ExtensionContext) {
 //Method Returns the Metadata object details.
 function getResultObj( context:vscode.ExtensionContext ):Promise<any[]>{
 	var fileName:string;
+	var extObj:any;
 	return new Promise(resolve=>{
 		getFileNameAndExtension().then(function(fileInfo){
-			console.log('fileName=>'+fileInfo[1]+'---'+'fileExt-->'+fileInfo[0]);
-			fileName = fileInfo[1];
-			getExtObj( fileInfo[0], fileInfo[1], context ).then( function( extObject ){
-				console.log('extObj-->'+JSON.stringify(extObject));
-				return extObject;
-
-			}).then(function(extObj){
-				if( extObj === undefined ){
-					vscode.window.showErrorMessage("This data type is not supported.");
-					return resolve([]);
-				}
-				else{
-					const query = "\"Select "+extObj.fields+" From "+extObj.objectName+" Where "+extObj.searchField+" = "+"\'"+fileName+"\'"+" \"";
-					var queryForMD = "sfdx force:data:soql:query --json -t -q "+query;
-					console.log( 'query-->'+query );
-					runCommand( queryForMD, true ).then( function( mdInfo ){
-
-						if( mdInfo.status !== 0 ){
-							vscode.window.showErrorMessage("Error occurred when fetching information.");
-							outputChannel.append( mdInfo.message );
-							outputChannel.show();	
-							return resolve([]);
+			fileName = fileInfo[1].toUpperCase();
+			var fileExt = fileInfo[0];
+			//Checking if object is Standard
+			if( fileExt === 'object-meta' && !fileName.includes("__C") && !fileName.includes("__E") ){
+				vscode.window.showErrorMessage("This extension does not support Standard Objects right now.");
+				return resolve([]);
+			}
+			removePreAndPostFixes( fileName ).then( function( filteredFileName ){
+				fileName = filteredFileName;
+			}).then(
+				function( result ){
+					getExtObj( fileInfo[0], fileInfo[1], context ).then( function( extObject ){
+						extObj = extObject[0];
+						if( extObject[1] !== '' ){
+							fileName = extObject[1];
 						}
-
-						//Raising error if no data returned.
-						if( mdInfo.result.records === undefined || mdInfo.result.records.length === 0 ){
-							vscode.window.showErrorMessage("No data found with this name in Org. Either its deleted or you don't have access to it.");
+						return extObject;
+		
+					}).then(function(result){
+						if( extObj === undefined ){
+							vscode.window.showErrorMessage("This data type is not supported.");
 							return resolve([]);
-						}
-
-						var returnedObject:any;
-
-						//If there are more then one record found then assigning the Last one.
-						if( mdInfo.result.records.length > 1 ){
-							returnedObject = mdInfo.result.records[ mdInfo.result.records.length - 1 ];
-							return resolve([returnedObject, fileName, extObj]);
 						}
 						else{
-							returnedObject = mdInfo.result.records[0];
-							return resolve([returnedObject, fileName, extObj]);
+							let useToolingAPI = '-t';
+							if( extObj.objectName === 'RecordType' ){
+								useToolingAPI = '';
+							}
+
+							const query = "\"Select "+extObj.fields+" From "+extObj.objectName+" Where "+extObj.searchField+" = "+"\'"+fileName+"\'"+" \"";
+							var queryForMD = "sfdx force:data:soql:query --json "+useToolingAPI+" -q "+query;
+							runCommand( queryForMD, true ).then( function( mdInfo ){
+		
+								if( mdInfo.status !== 0 ){
+									vscode.window.showErrorMessage("Error occurred when fetching information.");
+									outputChannel.append( mdInfo.message );
+									outputChannel.show();	
+									return resolve([]);
+								}
+		
+								//Raising error if no data returned.
+								if( mdInfo.result.records === undefined || mdInfo.result.records.length === 0 ){
+									vscode.window.showErrorMessage("No data found with this name in Org. Either its deleted or you don't have access to it.");
+									return resolve([]);
+								}
+		
+								var returnedObject:any;
+		
+								//If there are more then one record found then assigning the Last one.
+								if( mdInfo.result.records.length > 1 ){
+									returnedObject = mdInfo.result.records[ mdInfo.result.records.length - 1 ];
+									return resolve([returnedObject, fileName, extObj]);
+								}
+								else{
+									returnedObject = mdInfo.result.records[0];
+									return resolve([returnedObject, fileName, extObj]);
+								}
+							});
 						}
 					});
 				}
-			});
+			);
 		});
 	});
 
+}
+
+//Method removes Prefix and PostFix of elements.
+function removePreAndPostFixes( fileName:string ):Promise<string>{
+	return new Promise(resolve=>{
+		if( fileName.includes('__') ){
+			if( fileName.endsWith("__C") || fileName.endsWith("__E") ){
+				var nameList = fileName.split('__');
+				fileName = nameList[ nameList.length - 2 ];
+			}
+			else{
+				fileName = fileName.substring( fileName.lastIndexOf('__')+2 );
+			}
+			return resolve( fileName );
+		}
+		else{
+			return resolve( fileName );
+		}
+	});
 }
 
 //Method reads and returns active/selected File Name and Extension.
@@ -180,7 +234,7 @@ function getFileNameAndExtension():Promise<any[]>{
 
 //Method returns the Object MD which matches the Extension will be used to create Query.
 function getExtObj( fileExtension:string, fileName:string, context:vscode.ExtensionContext ):
-	Promise<{ objectName:string, fields:string, searchField:string }>{
+	Promise<[{ objectName:string, fields:string, searchField:string }, string]>{
 
 	var importedData = JSON.parse(fs.readFileSync(context.extensionPath + "\\src\\dataInfos.json", 'utf8'));
 
@@ -192,7 +246,7 @@ function getExtObj( fileExtension:string, fileName:string, context:vscode.Extens
 				getComponentActualName( fileName ).then( function(resultName){
 					fileName = resultName;
 					extObj = importedData[ newFileExt ];
-					return resolve(extObj);
+					return resolve([extObj, fileName]);
 				});
 			});
 		}
@@ -204,7 +258,7 @@ function getExtObj( fileExtension:string, fileName:string, context:vscode.Extens
 			else{
 				extObj = importedData[ext];
 			}
-			return resolve(extObj);
+			return resolve([extObj, '']);
 		}
 	});
 
@@ -229,7 +283,6 @@ function getComponentActualName( fileName:string ):Promise<string>{
 	return new Promise( resolve=>{
 		const fileNameUpperCase = fileName.toUpperCase();
 		if( fileNameUpperCase.endsWith('CONTROLLER') ){
-			console.log('inside controllerLogic-->'+fileNameUpperCase.substring( 0, fileNameUpperCase.lastIndexOf( 'CONTROLLER' ) ));
 			fileName = fileNameUpperCase.substring( 0, fileNameUpperCase.lastIndexOf( 'CONTROLLER' ) );
 		}
 		else if( fileNameUpperCase.endsWith('HELPER') ){
@@ -238,14 +291,13 @@ function getComponentActualName( fileName:string ):Promise<string>{
 		else if( fileNameUpperCase.endsWith('RENDERER') ){
 			fileName = fileNameUpperCase.substring( 0, fileNameUpperCase.lastIndexOf( 'RENDERER' ) );
 		}
-		console.log('fileName returned-->'+fileName);
 		return resolve( fileName );
 	});
 
 }
 
 //Method generated the Web view from the Passed Content.
-function createWebView( content:string, tabName:string, mdId:string, context:vscode.ExtensionContext, createPanel:boolean ){
+function createWebView( content:string, tabName:string, redUrl:string, context:vscode.ExtensionContext, createPanel:boolean ){
 	return new Promise( resolve=>{
 		var tabLabel = tabName+' Details';
 		tabName = tabName+'detail';
@@ -267,9 +319,9 @@ function createWebView( content:string, tabName:string, mdId:string, context:vsc
 					selectedItems.pop();
 					switch (message.command) {
 						case 'open_in_org':
-							openItemInOrg( mdId, true );
+							openItemInOrg( redUrl, true );
 						case 'refresh_information':
-							createWebView( content, tabName.slice( 0, tabName.lastIndexOf('detail') ), mdId, context, false );
+							createWebView( content, tabName.slice( 0, tabName.lastIndexOf('detail') ), redUrl, context, false );
 					}
 				},
 				undefined
@@ -289,7 +341,7 @@ function createWebView( content:string, tabName:string, mdId:string, context:vsc
 }
 
 //Method Opens the Item into Org.
-function openItemInOrg( mdId:string, showProgress:boolean ){
+function openItemInOrg( redUrl:string, showProgress:boolean ){
 
 	if(showProgress){
 		vscode.window.withProgress({
@@ -298,7 +350,7 @@ function openItemInOrg( mdId:string, showProgress:boolean ){
 			cancellable: true
 			}, () => {
 			var p2 = new Promise( resolve2 =>{
-				let command:string = "sfdx force:org:open -p /"+mdId;
+				let command:string = "sfdx force:org:open -p /"+redUrl;
 				runCommand( command, false ).then(function(result){
 					vscode.window.showInformationMessage('Item Opened in Org Successfully.');
 					return resolve2(true);
@@ -309,7 +361,7 @@ function openItemInOrg( mdId:string, showProgress:boolean ){
 	}
 	else{
 		var p2 = new Promise( resolve2 =>{
-			let command:string = "sfdx force:org:open -p /"+mdId;
+			let command:string = "sfdx force:org:open -p /"+redUrl;
 			runCommand( command, false ).then(function(result){
 				vscode.window.showInformationMessage('Item Opened in Org Successfully.');
 				return resolve2( true );
@@ -343,7 +395,6 @@ function runCommand( command:string, readOutput:boolean ):Promise<toolingAPIObje
 		});
 
 		foo.on('close', (data:string)=> {
-			console.log('items-->'+outputJson);
 			if( readOutput ){
 				return resolve( JSON.parse(outputJson) );
 			}
@@ -370,7 +421,6 @@ function getHtmlTable( returnedObj:{[key:string]: toolingAPIObject.Record}, fiel
 			if( fieldName.includes('.') ){
 				content += `<tr><td>${apiToLabel.get(fieldName)}</td>`;
 				const fieldsList = fieldName.split('.');
-				console.log( 'fieldsList-->'+fieldsList );
 				var recordValLevelOne:any = returnedObj[fieldsList[0]];
 				if( recordValLevelOne !== null ){
                     content += `<td>${recordValLevelOne[fieldsList[1]]}</td></tr>`;

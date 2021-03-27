@@ -21,7 +21,7 @@
 			},
 			{
 				"command": "salesforce-md-info.openiteminorg",
-				"title": "MDI: Open Item in Org."
+				"title": "MDI: Open Item in Org"
 			}
 		],
 		"menus": {

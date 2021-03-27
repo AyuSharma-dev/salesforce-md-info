@@ -1,65 +1,45 @@
-# salesforce-md-info README
 
-This is the README for your extension "salesforce-md-info". After writing up a brief description, we recommend including the following sections.
+## 【SALESFORCE METADATA INFO】
 
-## Features
+> This tool helps to Fetch any Metadata information inside VS Code itself and can directly open them in Org.
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+---
 
-For example if there is an image subfolder under your extension project workspace:
+## Dependency:
 
-\!\[feature X\]\(images/feature-x.png\)
+**Salesforce SFDX**<br/>
+**Salesforce CLI**<br/>
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+> This is not a Salesforce Owned extension, so if any issue arises feel free to log a issue on repository.
 
-## Requirements
+---
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## Functions
+**MDI: Get Metadata Info**<br/>
+**MDI: Open Item in Org**<br/>
 
-## Extension Settings
+## MDI: Get Metadata Info
+ **Command will fetch the Information of opened file.**
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+![SELECT JSON](Images/GetFileInfo.gif)
 
-For example:
 
-This extension contributes the following settings:
+## MDI: Open Item in Org
+**Open active file item into Salesforce Org.**
+  
+ ![SELECT Option](Images/OpenItemInOrg.gif)
 
-* `myExtension.enable`: enable/disable this extension
-* `myExtension.thing`: set to `blah` to do something
+---
 
-## Known Issues
+## Currently Supported Types:
+> Apex Classes, Test Suites, Apex Triggers, Aura Components, Lightning Web Components, Custom Objects, Permission Sets, Documents, Profiles, Quick Actions, Record Types, Static Resources, Validation Rules.
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+---
 
-## Release Notes
+## Installation
 
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
------------------------------------------------------------------------------------------------------------
-
-## Working with Markdown
-
-**Note:** You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+CMD+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux) or `Cmd+Space` (macOS) to see a list of Markdown snippets
-
-### For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+- Visual Studio Market place : https://marketplace.visualstudio.com/items?itemName=AyuSharma-dev.salesforce-md-info
+  
+---
 
 **Enjoy!**
