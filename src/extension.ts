@@ -23,7 +23,7 @@ const apiToLabel = new Map([
 	['Profile.Name', 'ProfileName']
 ]);
 
-const outputChannel = vscode.window.createOutputChannel('Test Suite Manager');
+const outputChannel = vscode.window.createOutputChannel('Metadata Info');
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -38,7 +38,6 @@ export function activate(context: vscode.ExtensionContext) {
 			var p = new Promise(async resolve => {
 				try {
                     getResultObj( context ).then(function( returnedValues ){
-						JSON.stringify( 'rVal-->'+JSON.stringify(returnedValues) );
 						if( returnedValues.length !== 0 ){
 							getHtmlTable( returnedValues[0], returnedValues[2].fields.split(',') ).then( function( content ){
 								let redUrl;
@@ -236,7 +235,7 @@ function getFileNameAndExtension():Promise<any[]>{
 function getExtObj( fileExtension:string, fileName:string, context:vscode.ExtensionContext ):
 	Promise<[{ objectName:string, fields:string, searchField:string }, string]>{
 
-	var importedData = JSON.parse(fs.readFileSync(context.extensionPath + "\\src\\dataInfos.json", 'utf8'));
+	var importedData = JSON.parse(fs.readFileSync(context.extensionPath + "\\objdata\\dataInfos.json", 'utf8'));
 
 	var extObj:{ objectName:string, fields:string, searchField:string };
 
