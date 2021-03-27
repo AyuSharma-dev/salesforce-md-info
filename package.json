@@ -6,13 +6,31 @@
 	"engines": {
 		"vscode": "^1.54.0"
 	},
+	"author": {
+		"name": "Ayush Sharma"
+	},
+	"publisher": "AyuSharma-dev",
 	"categories": [
-		"Other"
+		"Other",
+		"Programming Languages",
+		"Debuggers"
+	],
+	"keywords": [
+		"salesforce",
+		"apex",
+		"debug",
+		"metadata",
+		"information"
 	],
 	"activationEvents": [
 		"onStartupFinished"
 	],
 	"main": "./out/extension.js",
+	"icon": "Images/icon.png",
+	"galleryBanner": {
+		"color": "black",
+		"theme": "dark"
+	},
 	"contributes": {
 		"commands": [
 			{
@@ -25,14 +43,6 @@
 			}
 		],
 		"menus": {
-			"explorer/context": [{
-				"command": "salesforce-md-info.getmdinfo",
-				"group": "MDI"
-			},
-			{
-				"command": "salesforce-md-info.openiteminorg",
-				"group": "MDI"
-			}],
 			"editor/context": [{
 				"command": "salesforce-md-info.getmdinfo",
 				"group": "MDI"
@@ -63,5 +73,9 @@
 		"mocha": "^8.1.3",
 		"typescript": "^4.0.2",
 		"vscode-test": "^1.4.0"
-	}
+	},
+	"repository": {
+        "type": "git",
+        "url": "https://github.com/AyuSharma-dev/salesforce-md-info.git"
+    }
 }
