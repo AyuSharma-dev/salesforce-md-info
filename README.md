@@ -21,13 +21,13 @@
 ## MDI: Get Metadata Info
  **Command will fetch the Information of opened file.**
 
-![SELECT JSON](Images/GetFileInfo.gif)
+![SELECT JSON](media/Images/GetFileInfo.gif)
 
 
 ## MDI: Open Item in Org
 **Open active file item into Salesforce Org.**
   
- ![SELECT Option](Images/OpenItemInOrg.gif)
+ ![SELECT Option](media/Images/OpenItemInOrg.gif)
 
 ---
 

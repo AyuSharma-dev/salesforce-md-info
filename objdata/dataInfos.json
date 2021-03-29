@@ -4,7 +4,7 @@
         "fields":"Id,Name,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
         "searchField":"Name"
     },
-    "testSuite-meta":{
+    "testsuite-meta":{
         "objectName":"ApexTestSuite",
         "fields":"Id,TestSuiteName,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
         "searchField":"TestSuiteName"
@@ -14,12 +14,12 @@
         "fields":"Id,Name,ApiVersion,EntityDefinition.QualifiedApiName,IsValid,LengthWithoutComments,Status,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
         "searchField":"Name"
     },
-    "AuraDefinitionBundle":{
+    "auradefinitionbundle":{
         "objectName":"AuraDefinitionBundle",
         "fields":"Id,DeveloperName,MasterLabel,ApiVersion,Description,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
         "searchField":"DeveloperName"
     },
-    "LightningComponentBundle":{
+    "lightningcomponentbundle":{
         "objectName":"LightningComponentBundle",
         "fields":"Id,DeveloperName,MasterLabel,ApiVersion,Description,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
         "searchField":"DeveloperName"
@@ -41,15 +41,15 @@
     },
     "profile-meta":{
         "objectName":"Profile",
-        "fields":"Id,Name,FullName,Description,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
+        "fields":"Id,Name,Description,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
         "searchField":"Name"
     },
-    "quickAction-meta":{
+    "quickaction-meta":{
         "objectName":"QuickActionDefinition",
         "fields":"Id,DeveloperName,Label,SobjectType,StandardLabel,Type,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
         "searchField":"DeveloperName"
     },
-    "recordType-meta":{
+    "recordrype-meta":{
         "objectName":"RecordType",
         "fields":"Id,DeveloperName,Name,Description,IsActive,SobjectType,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
         "searchField":"DeveloperName",
@@ -60,9 +60,34 @@
         "fields":"Id,Name,ContentType,CacheControl,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
         "searchField":"Name"
     },
-    "validationRule-meta":{
+    "validationrule-meta":{
         "objectName":"ValidationRule",
         "fields":"Id,ValidationName,EntityDefinition.QualifiedApiName,ErrorMessage,Description,Active,ErrorDisplayField,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
         "searchField":"ValidationName"
+    },
+    "flow-meta":{
+        "objectName":"Flow",
+        "fields":"Id,MasterLabel,Definition.DeveloperName,Description,IsTemplate,ProcessType,Status,VersionNumber,DefinitionId,ManageableState,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
+        "searchField":"Definition.DeveloperName",
+        "urlKey":"DefinitionId"
+    },
+    "flexipage-meta":{
+        "objectName":"FlexiPage",
+        "fields":"Id,DeveloperName,MasterLabel,Description,EntityDefinition.DeveloperName,EntityDefinition.QualifiedApiName,Type,ParentFlexiPage,ManageableState,CreatedDate,LastModifiedDate",
+        "searchField":"DeveloperName",
+        "fieldsToHide":"EntityDefinition.DeveloperName"
+    },
+    "globalvalueset-meta":{
+        "objectName":"GlobalValueSet",
+        "fields":"Id,MasterLabel,Description,DeveloperName,ManageableState,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
+        "searchField":"DeveloperName"
+    },
+    "layout-meta":{
+        "objectName":"Layout",
+        "fields":"Id,Name,EntityDefinition.DeveloperName,EntityDefinition.QualifiedApiName,LayoutType,EntityDefinitionId,ManageableState,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
+        "searchField":"Name",
+        "redirectUrl":"ui/setup/layout/PageLayouts?type=",
+        "urlKey":"EntityDefinitionId",
+        "fieldsToHide":"EntityDefinition.DeveloperName,EntityDefinitionId"
     }
 }
