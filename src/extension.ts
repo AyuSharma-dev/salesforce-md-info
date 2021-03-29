@@ -13,9 +13,11 @@ export function activate(context: vscode.ExtensionContext) {
 			}, () => {
 			var p = new Promise(async resolve => {
 				try {
-                    md.getResultObj( context ).then(function( returnedValues ){
+                    md.getResultObj( context ).then(async function( returnedValues ){
 						if( returnedValues.length !== 0 ){
-							md.getHtmlTable( returnedValues[0], returnedValues[2].fields.split(',') ).then( function( content ){
+							var fieldsList = await md.getFilteredFields( returnedValues[2] );
+							console.log( 'fieldsList-->'+fieldsList );
+							md.getHtmlTable( returnedValues[0], fieldsList ).then( function( content ){
 								md.createWebView( content, returnedValues, context, true ).then( function(result){
 									return resolve( result );
 								});

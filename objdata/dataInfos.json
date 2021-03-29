@@ -73,8 +73,9 @@
     },
     "flexipage-meta":{
         "objectName":"FlexiPage",
-        "fields":"Id,DeveloperName,MasterLabel,Description,EntityDefinition.DeveloperName,Type,ParentFlexiPage,ManageableState,CreatedDate,LastModifiedDate",
-        "searchField":"DeveloperName"
+        "fields":"Id,DeveloperName,MasterLabel,Description,EntityDefinition.DeveloperName,EntityDefinition.QualifiedApiName,Type,ParentFlexiPage,ManageableState,CreatedDate,LastModifiedDate",
+        "searchField":"DeveloperName",
+        "fieldsToHide":"EntityDefinition.DeveloperName"
     },
     "globalvalueset-meta":{
         "objectName":"GlobalValueSet",
@@ -86,6 +87,7 @@
         "fields":"Id,Name,EntityDefinition.DeveloperName,EntityDefinition.QualifiedApiName,LayoutType,EntityDefinitionId,ManageableState,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
         "searchField":"Name",
         "redirectUrl":"ui/setup/layout/PageLayouts?type=",
-        "urlKey":"EntityDefinitionId"
+        "urlKey":"EntityDefinitionId",
+        "fieldsToHide":"EntityDefinition.DeveloperName,EntityDefinitionId"
     }
 }

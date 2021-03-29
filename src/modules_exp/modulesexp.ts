@@ -381,6 +381,27 @@ export function getHtmlTable( returnedObj:{[key:string]: toolingAPIObject.Record
 }
 
 
+export function getFilteredFields( exObject:any ):Promise<string[]>{
+
+	return new Promise(resolve=>{ 
+		var fieldsArray = exObject.fields.split( ',' );
+		if( exObject.fieldsToHide !== undefined ){
+			const hiddenFieldsArray:string[] = exObject.fieldsToHide.split(',');
+			for( var i=0; i<hiddenFieldsArray.length; i++ ){
+				console.log('HiddenValues-->'+hiddenFieldsArray[i]);
+				console.log('indexx-->'+fieldsArray.indexOf( hiddenFieldsArray[i] ));
+				fieldsArray.splice(fieldsArray.indexOf( hiddenFieldsArray[i] ), 1);
+			}
+			return resolve( fieldsArray );
+		}
+		else{
+			return resolve( fieldsArray );
+		}
+	});
+
+}
+
+
 //Method returns the HTML which will be set on the Web View.
 function getWebviewContent( content:string, urlOpenImage:string, refreshIcon:string ){
 	return `<!DOCTYPE html>
