@@ -28,7 +28,7 @@
 		"onCommand:salesforce-md-info.openiteminorg"
 	],
 	"main": "./out/extension.js",
-	"icon": "Images/icon.png",
+	"icon": "media/Images/icon.png",
 	"galleryBanner": {
 		"color": "black",
 		"theme": "dark"
