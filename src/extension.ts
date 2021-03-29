@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import * as md from './modules_exp/modulesexp';
+import * as md from './lib/modulesexp';
+const cst = require('./lib/constants');
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -16,7 +17,6 @@ export function activate(context: vscode.ExtensionContext) {
                     md.getResultObj( context ).then(async function( returnedValues ){
 						if( returnedValues.length !== 0 ){
 							var fieldsList = await md.getFilteredFields( returnedValues[2] );
-							console.log( 'fieldsList-->'+fieldsList );
 							md.getHtmlTable( returnedValues[0], fieldsList ).then( function( content ){
 								md.createWebView( content, returnedValues, context, true ).then( function(result){
 									return resolve( result );
@@ -65,7 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 				catch( error ){
 					console.log('error Occurred: '+error.stack);
-					vscode.window.showErrorMessage('Not able to open this item in Org.');
+					vscode.window.showErrorMessage(cst.ITEM_OPENED_ERROR);
 					return resolve(false);
 				}
 			});
