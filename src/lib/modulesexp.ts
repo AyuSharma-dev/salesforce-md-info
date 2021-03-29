@@ -3,27 +3,13 @@ const fs=require('fs');
 import * as path from 'path';
 import {toolingAPIObject} from '../toolingAPIObject';
 import * as vscode from 'vscode';
+const cst = require('./constants');
 
 var currentPanel:any;
 
-const extensionsToComponent = new Map([ 
-	['cmp', 'AuraDefinitionBundle'],
-	['auradoc', 'AuraDefinitionBundle'],
-	['cmp-meta', 'AuraDefinitionBundle'],
-	['design', 'AuraDefinitionBundle'],
-	['js-meta', 'LightningComponentBundle'],
-	['html', 'LightningComponentBundle']
-]);
+const extensionsToComponent = cst.EXTENSION_TO_CMP_MAP;
 
-const apiToLabel = new Map([
-	['LastModifiedBy.Name','LastModifiedBy'],
-	['CreatedBy.Name','CreatedBy'],
-	['Author.Name','Author'],
-	['EntityDefinition.QualifiedApiName','SobjectType'],
-	['EntityDefinition.DeveloperName', 'SobjectType'],
-	['Profile.Name', 'ProfileName'],
-	['Definition.DeveloperName', 'DeveloperName']
-]);
+const apiToLabel = cst.API_TO_LABEL;
 
 const outputChannel = vscode.window.createOutputChannel('Metadata Info');
 
@@ -36,8 +22,9 @@ export function getResultObj( context:vscode.ExtensionContext ):Promise<any[]>{
 			fileName = fileInfo[1].toUpperCase();
 			var fileExt = fileInfo[0];
 			//Checking if object is Standard
-			if( fileExt === 'object-meta' && !fileName.includes("__C") && !fileName.includes("__E") ){
-				vscode.window.showErrorMessage("This extension does not support Standard Objects right now.");
+			if( fileExt === cst.OBJECT_EXT && !fileName.includes(cst.POST_FIX) 
+				&& !fileName.includes(cst.POST_FIX2) ){
+				vscode.window.showErrorMessage(cst.STANDARD_OBJ_ERROR);
 				return resolve([]);
 			}
 			removePreAndPostFixes( fileName ).then( function( filteredFileName ){
@@ -53,7 +40,7 @@ export function getResultObj( context:vscode.ExtensionContext ):Promise<any[]>{
 		
 					}).then(function(result){
 						if( extObj === undefined ){
-							vscode.window.showErrorMessage("This data type is not supported.");
+							vscode.window.showErrorMessage(cst.DATA_NOT_SUPPORTED_ERROR);
 							return resolve([]);
 						}
 						else{
@@ -67,11 +54,11 @@ export function getResultObj( context:vscode.ExtensionContext ):Promise<any[]>{
 							}
 
 							const query = "\"Select "+extObj.fields+" From "+extObj.objectName+" Where "+extObj.searchField+" = "+"\'"+fileName+"\'"+"LIMIT 1 \"";
-							var queryForMD = "sfdx force:data:soql:query --json "+useToolingAPI+" -q "+query;
+							var queryForMD = cst.QUERY_CMD+" --json "+useToolingAPI+" -q "+query;
 							runCommand( queryForMD, true ).then( function( mdInfo ){
 		
 								if( mdInfo.status !== 0 ){
-									vscode.window.showErrorMessage("Error occurred when fetching information.");
+									vscode.window.showErrorMessage(cst.FETCHING_ERROR);
 									outputChannel.append( mdInfo.message );
 									outputChannel.show();	
 									return resolve([]);
@@ -79,7 +66,7 @@ export function getResultObj( context:vscode.ExtensionContext ):Promise<any[]>{
 		
 								//Raising error if no data returned.
 								if( mdInfo.result.records === undefined || mdInfo.result.records.length === 0 ){
-									vscode.window.showErrorMessage("No data found with this name in Org. Either its deleted or you don't have access to it.");
+									vscode.window.showErrorMessage(cst.NO_DATA_FOUND_ERROR);
 									return resolve([]);
 								}
 		
@@ -107,13 +94,13 @@ export function getResultObj( context:vscode.ExtensionContext ):Promise<any[]>{
 //Method removes Prefix and PostFix of elements.
 function removePreAndPostFixes( fileName:string ):Promise<string>{
 	return new Promise(resolve=>{
-		if( fileName.includes('__') ){
-			if( fileName.endsWith("__C") || fileName.endsWith("__E") ){
-				var nameList = fileName.split('__');
+		if( fileName.includes(cst.DOUBLE_UNS) ){
+			if( fileName.endsWith(cst.POST_FIX) || fileName.endsWith(cst.POST_FIX2) ){
+				var nameList = fileName.split(cst.DOUBLE_UNS);
 				fileName = nameList[ nameList.length - 2 ];
 			}
 			else{
-				fileName = fileName.substring( fileName.lastIndexOf('__')+2 );
+				fileName = fileName.substring( fileName.lastIndexOf(cst.DOUBLE_UNS)+2 );
 			}
 			return resolve( fileName );
 		}
@@ -152,7 +139,7 @@ function getFileNameAndExtension():Promise<any[]>{
 function getExtObj( fileExtension:string, fileName:string, context:vscode.ExtensionContext ):
 	Promise<[{ objectName:string, fields:string, searchField:string }, string]>{
 
-	var importedData = JSON.parse(fs.readFileSync(context.extensionPath + "\\objdata\\dataInfos.json", 'utf8'));
+	var importedData = JSON.parse(fs.readFileSync(context.extensionPath + cst.JSON_DATA_PATH, 'utf8'));
 
 	var extObj:{ objectName:string, fields:string, searchField:string };
 
@@ -243,10 +230,10 @@ export function createWebView( content:string, returnedValues:any, context:vscod
 				undefined
 			);
 		}
-		let urlOpenImage = vscode.Uri.file(path.join(context.extensionPath, 'media', 'Images/openinorg.png')).with({
+		let urlOpenImage = vscode.Uri.file(path.join(context.extensionPath, 'media', cst.IMG_PATH1)).with({
 			scheme: "vscode-resource"
 		}).toString();
-		let refreshIcon = vscode.Uri.file(path.join(context.extensionPath,'media', 'Images/whiteRefresh.png')).with({
+		let refreshIcon = vscode.Uri.file(path.join(context.extensionPath,'media', cst.IMG_PATH2)).with({
 			scheme: "vscode-resource"
 		}).toString();
 		
@@ -266,11 +253,9 @@ export async function openItemInOrg( returnedValues:any, showProgress:boolean ){
 			cancellable: true
 			}, () => {
 			var p2 = new Promise( async resolve2 =>{
-				
-				console.log('returned url-->'+redUrl);
-				let command:string = "sfdx force:org:open -p /"+redUrl;
+				let command:string = cst.OPEN_URL_CMD+" -p /"+redUrl;
 				runCommand( command, false ).then(function(result){
-					vscode.window.showInformationMessage('Item Opened in Org Successfully.');
+					vscode.window.showInformationMessage(cst.ITEM_OPENED_SUCCESS);
 					return resolve2(true);
 				});
 			} );
@@ -279,9 +264,9 @@ export async function openItemInOrg( returnedValues:any, showProgress:boolean ){
 	}
 	else{
 		var p2 = new Promise( resolve2 =>{
-			let command:string = "sfdx force:org:open -p /"+redUrl;
+			let command:string = cst.OPEN_URL_CMD+" -p /"+redUrl;
 			runCommand( command, false ).then(function(result){
-				vscode.window.showInformationMessage('Item Opened in Org Successfully.');
+				vscode.window.showInformationMessage(cst.ITEM_OPENED_SUCCESS);
 				return resolve2( true );
 			});
 		});
@@ -388,8 +373,6 @@ export function getFilteredFields( exObject:any ):Promise<string[]>{
 		if( exObject.fieldsToHide !== undefined ){
 			const hiddenFieldsArray:string[] = exObject.fieldsToHide.split(',');
 			for( var i=0; i<hiddenFieldsArray.length; i++ ){
-				console.log('HiddenValues-->'+hiddenFieldsArray[i]);
-				console.log('indexx-->'+fieldsArray.indexOf( hiddenFieldsArray[i] ));
 				fieldsArray.splice(fieldsArray.indexOf( hiddenFieldsArray[i] ), 1);
 			}
 			return resolve( fieldsArray );
