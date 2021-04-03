@@ -272,7 +272,11 @@ export async function openItemInOrg( returnedValues:any, showProgress:boolean, r
 			location: vscode.ProgressLocation.Notification,
 			title: "Opening item in Org.",
 			cancellable: true
-			}, () => {
+			}, (progress, token) => {
+			token.onCancellationRequested(() => {
+				console.log("User canceled the long running operation");
+				return;
+			});
 			var p2 = new Promise( async resolve2 =>{
 				let command:string = cst.OPEN_URL_CMD+" -p /"+redUrl;
 				runCommand( command, false ).then(function(result){
