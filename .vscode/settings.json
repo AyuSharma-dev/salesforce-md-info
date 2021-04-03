@@ -12,9 +12,11 @@
         "Ltng",
         "Picklists",
         "flexipage",
+        "getselectednameinfo",
         "modulesexp",
         "openinorg",
         "openiteminorg",
+        "openselectedobjname",
         "refreshinstanceurl",
         "testsuite"
     ]

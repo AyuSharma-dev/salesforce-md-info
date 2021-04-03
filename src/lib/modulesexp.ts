@@ -14,11 +14,11 @@ const apiToLabel = cst.API_TO_LABEL;
 const outputChannel = vscode.window.createOutputChannel('Metadata Info');
 
 //Method Returns the Metadata object details.
-export function getResultObj( context:vscode.ExtensionContext, openInOrgOnly:boolean ):Promise<any[]>{
+export function getResultObj( context:vscode.ExtensionContext, openInOrgOnly:boolean, dynamicObjName:boolean ):Promise<any[]>{
 	var fileName:string;
 	var extObj:any;
 	return new Promise(resolve=>{
-		getFileNameAndExtension().then(async function(fileInfo){
+		getFileNameAndExtension( dynamicObjName ).then(async function(fileInfo){
 			fileName = fileInfo[1].toUpperCase();
 			var fileExt = fileInfo[0];
 			//Checking if object is Standard
@@ -69,6 +69,7 @@ export function getResultObj( context:vscode.ExtensionContext, openInOrgOnly:boo
 
 							const query = "\"Select "+extObj.fields+" From "+extObj.objectName+" Where "+extObj.searchField+" = "+"\'"+fileName+"\'"+"LIMIT 1 \"";
 							var queryForMD = cst.QUERY_CMD+" --json "+useToolingAPI+" -q "+query;
+							console.log('query==>'+queryForMD);
 							runCommand( queryForMD, true ).then( function( mdInfo ){
 		
 								if( mdInfo.status !== 0 ){
@@ -125,26 +126,36 @@ function removePreAndPostFixes( fileName:string ):Promise<string>{
 }
 
 //Method reads and returns active/selected File Name and Extension.
-function getFileNameAndExtension():Promise<any[]>{
+function getFileNameAndExtension( getNameFromSelectedTest:boolean ):Promise<any[]>{
 
 	return new Promise( resolve=>{
-		var editorInfo = vscode.window.activeTextEditor;
-
-		if( editorInfo === undefined ){
-			return resolve([]);
-		}
-
-		var fileFullNameList = editorInfo.document.fileName.substring(editorInfo.document.fileName.lastIndexOf('\\') + 1).split('.');
-		var fileName:string, fileExtension:string;
-		if( fileFullNameList.length > 3 ){
-			fileName = fileFullNameList[1];
-			fileExtension = fileFullNameList[2];
+		if( getNameFromSelectedTest ){
+			const editor = vscode.window.activeTextEditor; // Getting selected Text JSON 
+			if( editor ===  undefined ){
+				return;
+			}
+			const fileName = editor.document.getText(editor.selection);
+			return resolve( [cst.OBJECT_EXT, fileName] );
 		}
 		else{
-			fileName = fileFullNameList[0];
-			fileExtension = fileFullNameList[1];
+			var editorInfo = vscode.window.activeTextEditor;
+
+			if( editorInfo === undefined ){
+				return resolve([]);
+			}
+
+			var fileFullNameList = editorInfo.document.fileName.substring(editorInfo.document.fileName.lastIndexOf('\\') + 1).split('.');
+			var fileName:string, fileExtension:string;
+			if( fileFullNameList.length > 3 ){
+				fileName = fileFullNameList[1];
+				fileExtension = fileFullNameList[2];
+			}
+			else{
+				fileName = fileFullNameList[0];
+				fileExtension = fileFullNameList[1];
+			}
+			return resolve( [fileExtension, fileName] );
 		}
-		return resolve( [fileExtension, fileName] );
 	});
 
 }
@@ -341,16 +352,19 @@ export function getRedirectURL( returnedValues:any ):Promise<string>{
 	return new Promise(async resolve=>{
 		let extObj = returnedValues[2];
 		let rec = returnedValues[0];
-		
+		let idSet = false;
+
 		if( await isLightningDefault() && returnedValues[2].redirectUrlLtng !== undefined ){
 			var ltngURL:string = returnedValues[2].redirectUrlLtng;
 			if( ltngURL.includes( "RECORD_ID_HERE" ) ){
 				ltngURL = ltngURL.replace( "RECORD_ID_HERE", rec.Id );
+				idSet = true;
 			}
 			if( ltngURL.includes( "OBJECT_ID_HERE" ) ){
 				ltngURL = ltngURL.replace( "OBJECT_ID_HERE", rec.EntityDefinitionId );
+				idSet = true;
 			}
-			else{
+			if( !idSet ){
 				ltngURL += rec.Id;
 			}
 			console.log('ltngURL-->'+ltngURL);
