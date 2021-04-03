@@ -59,7 +59,7 @@
         "redirectUrlLtng":"/lightning/setup/ObjectManager/OBJECT_ID_HERE/ButtonsLinksActions/RECORD_ID_HERE/view",
         "fieldsToHide":"EntityDefinitionId"
     },
-    "recordrype-meta":{
+    "recordtype-meta":{
         "objectName":"RecordType",
         "fields":"Id,DeveloperName,Name,Description,IsActive,SobjectType,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
         "searchField":"DeveloperName",

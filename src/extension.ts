@@ -14,7 +14,7 @@ export function activate(context: vscode.ExtensionContext) {
 			}, () => {
 			var p = new Promise(async resolve => {
 				try {
-                    md.getResultObj( context, true ).then(async function( returnedValues ){
+                    md.getResultObj( context, false ).then(async function( returnedValues ){
 						if( returnedValues.length !== 0 ){
 							var fieldsList = await md.getFilteredFields( returnedValues[2] );
 							md.getHtmlTable( returnedValues[0], fieldsList ).then( function( content ){
@@ -51,7 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
 					md.getResultObj( context, true ).then( async function(returnedValues){
 						
 						if( returnedValues !== undefined && returnedValues.length !== 0 && returnedValues[0].Id !== undefined ){
-							var p = md.openItemInOrg( returnedValues, false );
+							var p = md.openItemInOrg( returnedValues, false, '' );
 							if( p !== undefined ){
 								p.then(function( result ){
 									return resolve(true);

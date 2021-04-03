@@ -18,19 +18,33 @@ export function getResultObj( context:vscode.ExtensionContext, openInOrgOnly:boo
 	var fileName:string;
 	var extObj:any;
 	return new Promise(resolve=>{
-		getFileNameAndExtension().then(function(fileInfo){
+		getFileNameAndExtension().then(async function(fileInfo){
 			fileName = fileInfo[1].toUpperCase();
 			var fileExt = fileInfo[0];
 			//Checking if object is Standard
 			if( fileExt === cst.OBJECT_EXT && !fileName.includes(cst.POST_FIX) 
 				&& !fileName.includes(cst.POST_FIX2) ){
-				vscode.window.showErrorMessage(cst.STANDARD_OBJ_ERROR);
-				return resolve([]);
+				if( !openInOrgOnly ){
+					vscode.window.showErrorMessage(cst.STANDARD_OBJ_ERROR);
+					return resolve([]);
+				}
+				else{
+					if( await isLightningDefault() ){
+						await openItemInOrg( [], false, '/lightning/setup/ObjectManager/'+fileInfo[1]+'/view' );
+						return resolve([]);
+					}
+					else{
+						await openItemInOrg( [], false, '/ui/setup/Setup?setupid='+fileInfo[1] );
+						return resolve([]);
+					}
+				}
+				
 			}
 			removePreAndPostFixes( fileName ).then( function( filteredFileName ){
 				fileName = filteredFileName;
 			}).then(
 				function( result ){
+					console.log( fileInfo[0], fileInfo[1] );
 					getExtObj( fileInfo[0], fileInfo[1], context ).then( function( extObject ){
 						extObj = extObject[0];
 						if( extObject[1] !== '' ){
@@ -222,7 +236,7 @@ export function createWebView( content:string, returnedValues:any, context:vscod
 					selectedItems.pop();
 					switch (message.command) {
 						case 'open_in_org':
-							openItemInOrg( returnedValues, true );
+							openItemInOrg( returnedValues, true, '' );
 						case 'refresh_information':
 							createWebView( content, returnedValues, context, false );
 					}
@@ -244,8 +258,15 @@ export function createWebView( content:string, returnedValues:any, context:vscod
 }
 
 //Method Opens the Item into Org.
-export async function openItemInOrg( returnedValues:any, showProgress:boolean ){
-	let redUrl = await getRedirectURL( returnedValues );
+export async function openItemInOrg( returnedValues:any, showProgress:boolean, redUrl:string ){
+	if( redUrl === '' ){
+		redUrl = await getRedirectURL( returnedValues );
+	}
+
+	if( redUrl === "" ){
+		return;
+	}
+
 	if(showProgress){
 		vscode.window.withProgress({
 			location: vscode.ProgressLocation.Notification,
@@ -317,24 +338,19 @@ export function getRedirectURL( returnedValues:any ):Promise<string>{
 		let extObj = returnedValues[2];
 		let rec = returnedValues[0];
 		
-		if( await isLightningDefault() ){
-			if( returnedValues[2].redirectUrlLtng !== undefined ){
-				var ltngURL:string = returnedValues[2].redirectUrlLtng;
-				if( ltngURL.includes( "RECORD_ID_HERE" ) ){
-					ltngURL = ltngURL.replace( "RECORD_ID_HERE", rec.Id );
-				}
-				if( ltngURL.includes( "OBJECT_ID_HERE" ) ){
-					ltngURL = ltngURL.replace( "OBJECT_ID_HERE", rec.EntityDefinitionId );
-				}
-				else{
-					ltngURL += rec.Id;
-				}
-				return resolve( ltngURL );
+		if( await isLightningDefault() && returnedValues[2].redirectUrlLtng !== undefined ){
+			var ltngURL:string = returnedValues[2].redirectUrlLtng;
+			if( ltngURL.includes( "RECORD_ID_HERE" ) ){
+				ltngURL = ltngURL.replace( "RECORD_ID_HERE", rec.Id );
+			}
+			if( ltngURL.includes( "OBJECT_ID_HERE" ) ){
+				ltngURL = ltngURL.replace( "OBJECT_ID_HERE", rec.EntityDefinitionId );
 			}
 			else{
-				vscode.window.showErrorMessage("This object cannot be opened in lightning.");
-				return resolve('');
+				ltngURL += rec.Id;
 			}
+			console.log('ltngURL-->'+ltngURL);
+			return resolve( ltngURL );
 		}
 		else{
 			let objUrlKey;
@@ -344,8 +360,19 @@ export function getRedirectURL( returnedValues:any ):Promise<string>{
 			else{
 				objUrlKey = rec.Id;
 			}
+
 			if( returnedValues[2].redirectUrl !== undefined ){
-				return resolve(returnedValues[2].redirectUrl+objUrlKey);
+				objUrlKey = returnedValues[2].redirectUrl+objUrlKey;
+			}
+
+			if( returnedValues[2].redirectUrlLtng === undefined ){
+				var choice = await vscode.window.showInformationMessage("This item cannot be opened in lightning, open in classic?", "Yes", "No");
+				if (choice === "Yes") {
+					return resolve(objUrlKey);
+				}
+				else if( choice === "No" ){
+					return resolve("");
+				}
 			}
 			else{
 				return resolve(objUrlKey);
