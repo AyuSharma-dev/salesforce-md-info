@@ -32,7 +32,7 @@
 ---
 
 ## Currently Supported Types:
-> Apex Classes, Test Suites, Apex Triggers, Aura Components, Lightning Web Components, Custom Objects, Permission Sets, Documents, Profiles, Quick Actions, Record Types, Static Resources, Validation Rules.
+> Apex Classes, Test Suites, Apex Triggers, Aura Components, Lightning Web Components, Custom Objects, Permission Sets, Documents, Profiles, Quick Actions, Record Types, Static Resources, Validation Rules, Flow, FlexiPage, GlobalValueSet, Page Layouts.
 
 ---
 

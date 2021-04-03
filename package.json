@@ -53,6 +53,17 @@
 				"command": "salesforce-md-info.openiteminorg",
 				"group": "MDI"
 			}]
+		},
+		"configuration": {
+			"title": "Salesforce Metadata Info",
+			"properties": {
+				"extension.sfmdi.explorer.OpenURLInLightning": {
+				"type": "boolean",
+				"default": false,
+				"description": "Open Items in Salesforce Lightning by default.",
+				"scope": "window"
+				}
+			}
 		}
 	},
 	"scripts": {

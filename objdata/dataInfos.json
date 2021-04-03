@@ -2,7 +2,8 @@
     "cls":{
         "objectName":"ApexClass",
         "fields":"Id,Name,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
-        "searchField":"Name"
+        "searchField":"Name",
+        "redirectUrlLtng":"/lightning/setup/ApexClasses/page?address=/"
     },
     "testsuite-meta":{
         "objectName":"ApexTestSuite",
@@ -12,42 +13,51 @@
     "trigger":{
         "objectName":"ApexTrigger",
         "fields":"Id,Name,ApiVersion,EntityDefinition.QualifiedApiName,IsValid,LengthWithoutComments,Status,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
-        "searchField":"Name"
+        "searchField":"Name",
+        "redirectUrlLtng":"/lightning/setup/ApexTriggers/page?address=/"
     },
     "auradefinitionbundle":{
         "objectName":"AuraDefinitionBundle",
         "fields":"Id,DeveloperName,MasterLabel,ApiVersion,Description,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
-        "searchField":"DeveloperName"
+        "searchField":"DeveloperName",
+        "redirectUrlLtng":"/lightning/setup/LightningComponentBundles/page?address=/"
     },
     "lightningcomponentbundle":{
         "objectName":"LightningComponentBundle",
         "fields":"Id,DeveloperName,MasterLabel,ApiVersion,Description,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
-        "searchField":"DeveloperName"
+        "searchField":"DeveloperName",
+        "redirectUrlLtng":"/lightning/setup/LightningComponentBundles/page?address=/"
     },
     "object-meta":{
         "objectName":"CustomObject",
         "fields":"Id,DeveloperName,Description,SharingModel,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
-        "searchField":"DeveloperName"
+        "searchField":"DeveloperName",
+        "redirectUrlLtng":"/lightning/setup/ObjectManager/RECORD_ID_HERE/view"
     },
     "permissionset-meta":{
         "objectName":"PermissionSet",
         "fields":"Id,Name,Label,Description,IsCustom,Profile.Name,Type,PermissionSetGroupId,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
-        "searchField":"Name"
+        "searchField":"Name",
+        "redirectUrlLtng":"/lightning/setup/PermSets/page?address=/"
     },
     "document-meta":{
         "objectName":"Document",
         "fields":"Id,DeveloperName,Author.Name,ContentType,Type,Url,IsPublic,IsInternalUseOnly,Description,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
-        "searchField":"DeveloperName"
+        "searchField":"DeveloperName",
+        "redirectUrlLtng":"/"
     },
     "profile-meta":{
         "objectName":"Profile",
         "fields":"Id,Name,Description,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
-        "searchField":"Name"
+        "searchField":"Name",
+        "redirectUrlLtng":"/lightning/setup/Profiles/page?address=/"
     },
     "quickaction-meta":{
         "objectName":"QuickActionDefinition",
-        "fields":"Id,DeveloperName,Label,SobjectType,StandardLabel,Type,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
-        "searchField":"DeveloperName"
+        "fields":"Id,DeveloperName,Label,SobjectType,StandardLabel,Type,EntityDefinitionId,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
+        "searchField":"DeveloperName",
+        "redirectUrlLtng":"/lightning/setup/ObjectManager/OBJECT_ID_HERE/ButtonsLinksActions/RECORD_ID_HERE/view",
+        "fieldsToHide":"EntityDefinitionId"
     },
     "recordrype-meta":{
         "objectName":"RecordType",
@@ -58,29 +68,36 @@
     "resource-meta":{
         "objectName":"StaticResource",
         "fields":"Id,Name,ContentType,CacheControl,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
-        "searchField":"Name"
+        "searchField":"Name",
+        "redirectUrlLtng":"/lightning/setup/StaticResources/page?address=/"
     },
     "validationrule-meta":{
         "objectName":"ValidationRule",
-        "fields":"Id,ValidationName,EntityDefinition.QualifiedApiName,ErrorMessage,Description,Active,ErrorDisplayField,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
-        "searchField":"ValidationName"
+        "fields":"Id,ValidationName,EntityDefinition.QualifiedApiName,EntityDefinitionId,ErrorMessage,Description,Active,ErrorDisplayField,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
+        "searchField":"ValidationName",
+        "redirectUrlLtng":"/lightning/setup/ObjectManager/OBJECT_ID_HERE/ValidationRules/RECORD_ID_HERE/view",
+        "fieldsToHide":"EntityDefinitionId"
     },
     "flow-meta":{
         "objectName":"Flow",
         "fields":"Id,MasterLabel,Definition.DeveloperName,Description,IsTemplate,ProcessType,Status,VersionNumber,DefinitionId,ManageableState,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
         "searchField":"Definition.DeveloperName",
-        "urlKey":"DefinitionId"
+        "urlKey":"DefinitionId",
+        "redirectUrlLtng":"/lightning/setup/Flows/page?address=/"
+        
     },
     "flexipage-meta":{
         "objectName":"FlexiPage",
         "fields":"Id,DeveloperName,MasterLabel,Description,EntityDefinition.DeveloperName,EntityDefinition.QualifiedApiName,Type,ParentFlexiPage,ManageableState,CreatedDate,LastModifiedDate",
         "searchField":"DeveloperName",
-        "fieldsToHide":"EntityDefinition.DeveloperName"
+        "fieldsToHide":"EntityDefinition.DeveloperName",
+        "redirectUrlLtng":"/lightning/setup/FlexiPageList/page?address=/"
     },
     "globalvalueset-meta":{
         "objectName":"GlobalValueSet",
         "fields":"Id,MasterLabel,Description,DeveloperName,ManageableState,CreatedDate,CreatedBy.Name,LastModifiedDate,LastModifiedBy.Name",
-        "searchField":"DeveloperName"
+        "searchField":"DeveloperName",
+        "redirectUrlLtng":"/lightning/setup/Picklists/page?address=/"
     },
     "layout-meta":{
         "objectName":"Layout",
@@ -88,6 +105,7 @@
         "searchField":"Name",
         "redirectUrl":"ui/setup/layout/PageLayouts?type=",
         "urlKey":"EntityDefinitionId",
-        "fieldsToHide":"EntityDefinition.DeveloperName,EntityDefinitionId"
+        "fieldsToHide":"EntityDefinition.DeveloperName,EntityDefinitionId",
+        "redirectUrlLtng":"/lightning/setup/ObjectManager/OBJECT_ID_HERE/PageLayouts/view"
     }
 }

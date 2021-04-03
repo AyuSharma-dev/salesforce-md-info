@@ -14,7 +14,7 @@ const apiToLabel = cst.API_TO_LABEL;
 const outputChannel = vscode.window.createOutputChannel('Metadata Info');
 
 //Method Returns the Metadata object details.
-export function getResultObj( context:vscode.ExtensionContext ):Promise<any[]>{
+export function getResultObj( context:vscode.ExtensionContext, openInOrgOnly:boolean ):Promise<any[]>{
 	var fileName:string;
 	var extObj:any;
 	return new Promise(resolve=>{
@@ -313,23 +313,60 @@ function runCommand( command:string, readOutput:boolean ):Promise<toolingAPIObje
 
 //Method returns the redirect URL after modification.
 export function getRedirectURL( returnedValues:any ):Promise<string>{
-	return new Promise(resolve=>{
+	return new Promise(async resolve=>{
 		let extObj = returnedValues[2];
-		let objUrlKey;
-		if( extObj.urlKey !== undefined ){
-			objUrlKey = returnedValues[0][extObj.urlKey];
+		let rec = returnedValues[0];
+		
+		if( await isLightningDefault() ){
+			if( returnedValues[2].redirectUrlLtng !== undefined ){
+				var ltngURL:string = returnedValues[2].redirectUrlLtng;
+				if( ltngURL.includes( "RECORD_ID_HERE" ) ){
+					ltngURL = ltngURL.replace( "RECORD_ID_HERE", rec.Id );
+				}
+				if( ltngURL.includes( "OBJECT_ID_HERE" ) ){
+					ltngURL = ltngURL.replace( "OBJECT_ID_HERE", rec.EntityDefinitionId );
+				}
+				else{
+					ltngURL += rec.Id;
+				}
+				return resolve( ltngURL );
+			}
+			else{
+				vscode.window.showErrorMessage("This object cannot be opened in lightning.");
+				return resolve('');
+			}
 		}
 		else{
-			objUrlKey = returnedValues[0].Id;
+			let objUrlKey;
+			if( extObj.urlKey !== undefined ){
+				objUrlKey = rec[extObj.urlKey];
+			}
+			else{
+				objUrlKey = rec.Id;
+			}
+			if( returnedValues[2].redirectUrl !== undefined ){
+				return resolve(returnedValues[2].redirectUrl+objUrlKey);
+			}
+			else{
+				return resolve(objUrlKey);
+			}
 		}
 		
-		if( returnedValues[2].redirectUrl !== undefined ){
-			return resolve(returnedValues[2].redirectUrl+objUrlKey);
-		}
-		else{
-			return resolve(objUrlKey);
-		}
 	});
+}
+
+
+function isLightningDefault():Promise<Boolean>{
+
+	return new Promise(resolve=>{
+		const workspaceConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(
+			'extension.sfmdi'
+		);
+		const isLightningDefault: boolean = Boolean( workspaceConfig.get('explorer.OpenURLInLightning') );
+		
+		resolve( isLightningDefault );
+	});
+
 }
 
 
