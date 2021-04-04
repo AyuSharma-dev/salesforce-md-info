@@ -2,7 +2,7 @@
 	"name": "salesforce-md-info",
 	"displayName": "Salesforce MetaData Info",
 	"description": "Extension provides information about Salesforce Metadata.",
-  "version": "0.0.4",
+  "version": "0.0.5",
 	"engines": {
 		"vscode": "^1.54.0"
 	},
