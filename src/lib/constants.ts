@@ -37,5 +37,24 @@ module.exports = Object.freeze({
         ['EntityDefinition.DeveloperName', 'SobjectType'],
         ['Profile.Name', 'ProfileName'],
         ['Definition.DeveloperName', 'DeveloperName']
+    ]),
+    TYPE_TO_EXTENSION: new Map([
+        ['Apex Class', 'cls'],
+        ['Apex Trigger', 'trigger'],
+        ['Aura Component', 'auradefinitionbundle'],
+        ['Lightning Web Component', 'lightningcomponentbundle'],
+        ['SObject', 'object-meta'],
+        ['PermissionSet', 'permissionset-meta'],
+        ['Document', 'document-meta'],
+        ['Profile', 'profile-meta'],
+        ['Quick Action', 'quickaction-meta'],
+        ['RecordType', 'recordtype-meta'],
+        ['StaticResource', 'resource-meta'],
+        ['ValidationRule', 'validationrule-meta'],
+        ['Flow', 'flow-meta'],
+        ['FlexiPage', 'flexipage-meta'],
+        ['GlobalValueSet', 'globalvalueset-meta'],
+        ['Layout', 'layout-meta']
     ])
+    
 });
