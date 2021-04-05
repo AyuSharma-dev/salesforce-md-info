@@ -27,20 +27,20 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
-	let openSelectedObjName = vscode.commands.registerCommand('salesforce-md-info.openselectedobjname', () => {
+	let openSelectedObjName = vscode.commands.registerCommand('salesforce-md-info.openitembyname', () => {
 		vscode.window.withProgress({
 			location: vscode.ProgressLocation.Notification,
-			title: "Opening Object in Org with selected name.",
+			title: "Opening Item in Org with selected name.",
 			cancellable: true
 			}, (progress, token) => {
 				return openItemInOrgHelper( context, token, true );
 		});
 	});
 
-	let getSelectedObjNameInfo = vscode.commands.registerCommand('salesforce-md-info.getselectednameinfo', () => {
+	let getSelectedObjNameInfo = vscode.commands.registerCommand('salesforce-md-info.getinfobyname', () => {
 		vscode.window.withProgress({
 			location: vscode.ProgressLocation.Notification,
-			title: "Getting selected Object information.",
+			title: "Getting Selected Item information.",
 			cancellable: true
 			}, (progress, token) => {
 				return getMdInfoHelper( context, token, true );

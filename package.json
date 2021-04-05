@@ -44,12 +44,12 @@
 				"title": "MDI: Open Item In Org"
 			},
 			{
-				"command": "salesforce-md-info.openselectedobjname",
-				"title": "MDI: Open Object in Org With Selected API Name."
+				"command": "salesforce-md-info.openitembyname",
+				"title": "MDI: Open Item in Org With Selected API Name."
 			},
 			{
-				"command": "salesforce-md-info.getselectednameinfo",
-				"title": "MDI: Get Metadata Info Of Object With Selected API Name."
+				"command": "salesforce-md-info.getinfobyname",
+				"title": "MDI: Get Metadata Info By Selected API Name."
 			}
 		],
 		"menus": {

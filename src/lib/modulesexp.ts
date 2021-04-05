@@ -19,6 +19,9 @@ export function getResultObj( context:vscode.ExtensionContext, openInOrgOnly:boo
 	var extObj:any;
 	return new Promise(resolve=>{
 		getFileNameAndExtension( dynamicObjName ).then(async function(fileInfo){
+			if( fileInfo.length === 0 ){
+				return resolve([]);
+			}
 			fileName = fileInfo[1].toUpperCase();
 			var fileExt = fileInfo[0];
 			//Checking if object is Standard
@@ -44,7 +47,6 @@ export function getResultObj( context:vscode.ExtensionContext, openInOrgOnly:boo
 				fileName = filteredFileName;
 			}).then(
 				function( result ){
-					console.log( fileInfo[0], fileInfo[1] );
 					getExtObj( fileInfo[0], fileInfo[1], context ).then( function( extObject ){
 						extObj = extObject[0];
 						if( extObject[1] !== '' ){
@@ -69,7 +71,6 @@ export function getResultObj( context:vscode.ExtensionContext, openInOrgOnly:boo
 
 							const query = "\"Select "+extObj.fields+" From "+extObj.objectName+" Where "+extObj.searchField+" = "+"\'"+fileName+"\'"+"LIMIT 1 \"";
 							var queryForMD = cst.QUERY_CMD+" --json "+useToolingAPI+" -q "+query;
-							console.log('query==>'+queryForMD);
 							runCommand( queryForMD, true ).then( function( mdInfo ){
 		
 								if( mdInfo.status !== 0 ){
@@ -126,16 +127,32 @@ function removePreAndPostFixes( fileName:string ):Promise<string>{
 }
 
 //Method reads and returns active/selected File Name and Extension.
-function getFileNameAndExtension( getNameFromSelectedTest:boolean ):Promise<any[]>{
+function getFileNameAndExtension( getNameFromSelectedText:boolean ):Promise<any[]>{
 
 	return new Promise( resolve=>{
-		if( getNameFromSelectedTest ){
+		if( getNameFromSelectedText ){
 			const editor = vscode.window.activeTextEditor; // Getting selected Text JSON 
 			if( editor ===  undefined ){
 				return;
 			}
 			const fileName = editor.document.getText(editor.selection);
-			return resolve( [cst.OBJECT_EXT, fileName] );
+			let names:string[] = [];
+			for (let key of cst.TYPE_TO_EXTENSION.keys()) {
+				names.push( key );
+			}
+			let p = new Promise(resolve=>{
+				vscode.window.showQuickPick(names).then(selection => {
+					if (!selection) {
+						vscode.window.showErrorMessage("Unable To Process Request.");
+						return resolve([]);
+					}
+					return resolve([ cst.TYPE_TO_EXTENSION.get(selection), fileName ]);
+				});
+			});
+			
+			p.then(function(result:any){
+				return resolve( result );
+			});
 		}
 		else{
 			var editorInfo = vscode.window.activeTextEditor;
@@ -285,7 +302,6 @@ export async function openItemInOrg( returnedValues:any, showProgress:boolean, r
 			cancellable: true
 			}, (progress, token) => {
 			token.onCancellationRequested(() => {
-				console.log("User canceled the long running operation");
 				return;
 			});
 			var p2 = new Promise( async resolve2 =>{
@@ -367,7 +383,6 @@ export function getRedirectURL( returnedValues:any ):Promise<string>{
 			if( !idSet ){
 				ltngURL += rec.Id;
 			}
-			console.log('ltngURL-->'+ltngURL);
 			return resolve( ltngURL );
 		}
 		else{
