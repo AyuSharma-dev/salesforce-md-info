@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 module.exports = Object.freeze({
-    STANDARD_OBJ_ERROR: "This extension does not support Standard Objects right now.",
+    STANDARD_OBJ_ERROR: "This extension does not support this command Standard Objects right now.",
     DATA_NOT_SUPPORTED_ERROR: "This data type is not supported.",
     FETCHING_ERROR: "Error occurred when fetching information.",
     NO_DATA_FOUND_ERROR: "No data found with this name in Org. Either its deleted or you don't have access to it.",
