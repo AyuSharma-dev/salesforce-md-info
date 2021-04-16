@@ -19,7 +19,7 @@ module.exports = Object.freeze({
 
     IMG_PATH1:"Images/openinorg.png",
     IMG_PATH2:"Images/whiteRefresh.png",
-    JSON_DATA_PATH: "\\objdata\\dataInfos.json",
+    JSON_DATA_PATH: "/objdata/dataInfos.json",
 
     EXTENSION_TO_CMP_MAP: new Map([ 
         ['cmp', 'AuraDefinitionBundle'],
