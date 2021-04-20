@@ -160,8 +160,15 @@ function getFileNameAndExtension( getNameFromSelectedText:boolean ):Promise<any[
 			if( editorInfo === undefined ){
 				return resolve([]);
 			}
+			let fileFullNameList;
+			let fullPath = editorInfo.document.fileName;
+			if( fullPath.includes('\\') ){
+				fileFullNameList = fullPath.substring(fullPath.lastIndexOf('\\') + 1).split('.');
+			}
+			else{
+				fileFullNameList = fullPath.substring(fullPath.lastIndexOf('/') + 1).split('.');
+			}
 
-			var fileFullNameList = editorInfo.document.fileName.substring(editorInfo.document.fileName.lastIndexOf('\\') + 1).split('.');
 			var fileName:string, fileExtension:string;
 			if( fileFullNameList.length > 3 ){
 				fileName = fileFullNameList[1];
